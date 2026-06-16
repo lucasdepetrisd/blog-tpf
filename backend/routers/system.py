@@ -1,16 +1,23 @@
 import asyncio
 import json
+import os
 import platform
 import socket
 from datetime import datetime, timezone
+from pathlib import Path
 
 import psutil
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sse_starlette.sse import EventSourceResponse
 from database import get_db
 import sqlalchemy
+from auth import get_current_user
 
 router = APIRouter(prefix="/api/system", tags=["system"])
+
+_default_static = Path(__file__).parent.parent / "public" / "static"
+STATIC_DIR = Path(os.getenv("STATIC_DIR", str(_default_static)))
+PDF_PATH   = STATIC_DIR / "informe.pdf"
 
 
 def _get_ip():
@@ -152,3 +159,21 @@ async def stream_system_info(request: Request):
             await asyncio.sleep(1)
 
     return EventSourceResponse(event_gen())
+
+
+@router.post("/upload-pdf")
+async def upload_pdf(
+    file: UploadFile = File(...),
+    _: str = Depends(get_current_user),
+):
+    if file.content_type not in ("application/pdf", "application/octet-stream"):
+        raise HTTPException(status_code=400, detail="Solo se aceptan archivos PDF")
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    contents = await file.read()
+    PDF_PATH.write_bytes(contents)
+    return {"ok": True, "size": len(contents)}
+
+
+@router.get("/pdf-status")
+def pdf_status():
+    return {"exists": PDF_PATH.exists(), "size": PDF_PATH.stat().st_size if PDF_PATH.exists() else 0}

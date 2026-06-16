@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 
 from auth import create_token, verify_password, BLOG_USER
 from database import engine, get_db, Base
@@ -32,6 +35,10 @@ app.include_router(posts.router)
 app.include_router(profile.router)
 app.include_router(changelog.router)
 app.include_router(system.router)
+
+_static_dir = Path(__file__).parent / "public" / "static"
+_static_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
 
 @app.post("/api/auth/login")

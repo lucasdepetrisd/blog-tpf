@@ -1,13 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Document, Page, pdfjs } from 'react-pdf'
+import 'react-pdf/dist/Page/AnnotationLayer.css'
+import 'react-pdf/dist/Page/TextLayer.css'
 import { getProfile, getChangelog, getSystemInfo, type Profile, type ChangelogEntry, type SystemInfo } from '../api'
 import InfraGraph from '../components/InfraGraph'
 
-type Tab = 'about' | 'infra' | 'system'
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString()
+
+type Tab = 'about' | 'infra' | 'system' | 'docs'
 
 const TABS: { id: Tab; label: string; cmd: string }[] = [
   { id: 'about',  label: 'about',  cmd: 'cat about.md'              },
   { id: 'infra',  label: 'infra',  cmd: 'pvesh get /nodes/pve/lxc'  },
   { id: 'system', label: 'system', cmd: 'neofetch'                   },
+  { id: 'docs',   label: 'docs',   cmd: 'ls docs/'                   },
 ]
 
 function Bar({ percent }: { percent: number }) {
@@ -23,12 +32,17 @@ export default function About() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [changelog, setChangelog] = useState<ChangelogEntry[]>([])
   const [sysinfo, setSysinfo] = useState<SystemInfo | null>(null)
+  const [pdfExists, setPdfExists] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([getProfile(), getChangelog(), getSystemInfo()])
       .then(([p, c, s]) => { setProfile(p.data); setChangelog(c.data); setSysinfo(s.data) })
       .finally(() => setLoading(false))
+
+    fetch('/api/system/pdf-status')
+      .then(r => r.json())
+      .then(d => setPdfExists(d.exists))
 
     const es = new EventSource('/api/system/stream')
     es.onmessage = (e) => setSysinfo(JSON.parse(e.data))
@@ -44,7 +58,7 @@ export default function About() {
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 border-b border-zinc-800 pb-0">
-        {TABS.map(t => (
+        {TABS.filter(t => t.id !== 'docs' || pdfExists).map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -115,14 +129,18 @@ export default function About() {
                   <p className="text-zinc-300 mt-0.5">2026</p>
                 </div>
               </div>
-              <a
-                href="/static/informe.pdf"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-zinc-800 rounded px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-colors shrink-0"
-              >
-                <span className="text-zinc-600">↓</span> informe-tpf.pdf
-              </a>
+              {pdfExists ? (
+                <a
+                  href="/static/informe.pdf"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 border border-zinc-800 rounded px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-colors shrink-0"
+                >
+                  <span className="text-zinc-600">↓</span> informe-tpf.pdf
+                </a>
+              ) : (
+                <span className="text-xs text-zinc-700 shrink-0">informe no disponible</span>
+              )}
             </div>
           </div>
 
@@ -215,6 +233,77 @@ export default function About() {
         </div>
       )}
 
+      {/* Tab: docs */}
+      {tab === 'docs' && (
+        <PdfViewer url="/static/informe.pdf" />
+      )}
+
+    </div>
+  )
+}
+
+function PdfViewer({ url }: { url: string }) {
+  const [pages, setPages] = useState<number>(0)
+  const [page, setPage] = useState(1)
+  const [width, setWidth] = useState(680)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between text-xs text-zinc-500">
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="border border-zinc-800 rounded px-3 py-1.5 hover:border-zinc-600 hover:text-zinc-300 transition-colors"
+        >
+          ↓ descargar PDF
+        </a>
+        {pages > 0 && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-2 py-1 border border-zinc-800 rounded hover:border-zinc-600 disabled:opacity-30 transition-colors"
+            >
+              ←
+            </button>
+            <span className="tabular-nums">{page} / {pages}</span>
+            <button
+              onClick={() => setPage(p => Math.min(pages, p + 1))}
+              disabled={page >= pages}
+              className="px-2 py-1 border border-zinc-800 rounded hover:border-zinc-600 disabled:opacity-30 transition-colors"
+            >
+              →
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div ref={containerRef} className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-950">
+        <Document
+          file={url}
+          onLoadSuccess={({ numPages }) => setPages(numPages)}
+          onItemClick={({ pageNumber }) => setPage(pageNumber)}
+          loading={<p className="text-zinc-600 text-xs p-8">cargando PDF...</p>}
+          error={<p className="text-zinc-600 text-xs p-8">no se pudo cargar el PDF.</p>}
+        >
+          <Page
+            pageNumber={page}
+            width={width}
+            renderTextLayer
+            renderAnnotationLayer
+          />
+        </Document>
+      </div>
     </div>
   )
 }

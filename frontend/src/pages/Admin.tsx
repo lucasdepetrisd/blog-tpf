@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from 'react'
+import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import {
@@ -9,7 +9,7 @@ import {
 } from '../api'
 import CropModal from '../components/CropModal'
 
-type Tab = 'posts' | 'profile' | 'changelog'
+type Tab = 'posts' | 'profile' | 'changelog' | 'docs'
 
 const inputClass =
   'w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600'
@@ -364,12 +364,73 @@ export default function Admin() {
           <button className={tabBtn('posts')} onClick={() => setTab('posts')}>posts</button>
           <button className={tabBtn('profile')} onClick={() => setTab('profile')}>profile</button>
           <button className={tabBtn('changelog')} onClick={() => setTab('changelog')}>changelog</button>
+          <button className={tabBtn('docs')} onClick={() => setTab('docs')}>docs</button>
         </div>
       </div>
       <div>
         {tab === 'posts' && <PostsTab />}
         {tab === 'profile' && <ProfileTab />}
         {tab === 'changelog' && <ChangelogTab />}
+        {tab === 'docs' && <DocsTab />}
+      </div>
+    </div>
+  )
+}
+
+function DocsTab() {
+  const { token } = useAuth()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'ok' | 'error'>('idle')
+  const [exists, setExists] = useState<boolean | null>(null)
+  const [size, setSize] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/system/pdf-status')
+      .then(r => r.json())
+      .then(d => { setExists(d.exists); setSize(d.size) })
+  }, [status])
+
+  async function handleUpload(e: FormEvent) {
+    e.preventDefault()
+    const file = inputRef.current?.files?.[0]
+    if (!file) return
+    setStatus('uploading')
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/system/upload-pdf', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+    setStatus(res.ok ? 'ok' : 'error')
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="border border-zinc-800 rounded p-4 space-y-3">
+        <p className="text-xs text-zinc-400 font-medium">informe-tpf.pdf</p>
+        <p className="text-xs text-zinc-600">
+          {exists === null ? '...' : exists
+            ? `publicado · ${(size / 1024).toFixed(0)} KB`
+            : 'no publicado'}
+        </p>
+        <form onSubmit={handleUpload} className="flex items-center gap-3">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/pdf"
+            className="text-xs text-zinc-400 file:mr-3 file:border file:border-zinc-700 file:rounded file:px-3 file:py-1.5 file:text-xs file:text-zinc-300 file:bg-zinc-900 hover:file:border-zinc-500 transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={status === 'uploading'}
+            className="text-xs border border-zinc-700 rounded px-3 py-1.5 text-zinc-300 hover:border-zinc-500 disabled:opacity-40 transition-colors shrink-0"
+          >
+            {status === 'uploading' ? 'subiendo...' : 'subir'}
+          </button>
+        </form>
+        {status === 'ok'    && <p className="text-xs text-green-500">PDF publicado correctamente.</p>}
+        {status === 'error' && <p className="text-xs text-red-500">Error al subir el PDF.</p>}
       </div>
     </div>
   )

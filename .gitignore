@@ -11,7 +11,7 @@ frontend/dist/
 frontend/.env
 
 # Archivos subidos
-backend/static/foto*
+backend/public/static/*
 
 # Misc
 *.iso
