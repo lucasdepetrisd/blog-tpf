@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from auth import create_token, verify_password, BLOG_USER
 from database import engine, get_db, Base
-from routers import posts, profile, changelog
+from routers import posts, profile, changelog, system
 import models
 
 Base.metadata.create_all(bind=engine)
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(posts.router)
 app.include_router(profile.router)
 app.include_router(changelog.router)
+app.include_router(system.router)
 
 
 @app.post("/api/auth/login")

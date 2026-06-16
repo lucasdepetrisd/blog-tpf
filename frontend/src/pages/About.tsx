@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'react'
-import { getProfile, getChangelog, type Profile, type ChangelogEntry } from '../api'
+import { getProfile, getChangelog, getSystemInfo, type Profile, type ChangelogEntry, type SystemInfo } from '../api'
 
-const STACK = [
-  { label: 'frontend',  value: 'React 19 + TypeScript + Vite',     host: 'CT 206 · 10.0.0.206' },
-  { label: 'backend',   value: 'FastAPI + SQLAlchemy + Uvicorn',    host: 'CT 206 · 10.0.0.206' },
-  { label: 'database',  value: 'PostgreSQL 16',                     host: 'CT 207 · 10.0.0.207' },
-  { label: 'proxy',     value: 'nginx (reverse proxy)',             host: 'CT 206 · 10.0.0.206' },
-  { label: 'infra',     value: 'Proxmox VE · LXC containers',      host: 'UTN FRT' },
-]
-
-function Row({ label, value, host }: { label: string; value: string; host: string }) {
+function Bar({ percent }: { percent: number }) {
   return (
-    <div className="flex items-baseline gap-2 py-2 border-b border-zinc-900 text-xs">
-      <span className="text-zinc-600 w-20 shrink-0">{label}</span>
-      <span className="text-zinc-300 flex-1">{value}</span>
-      <span className="text-zinc-600 tabular-nums">{host}</span>
+    <div className="w-16 h-1 bg-zinc-800 rounded overflow-hidden inline-block align-middle ml-1">
+      <div className="h-full bg-zinc-500 rounded" style={{ width: `${percent}%` }} />
     </div>
   )
 }
@@ -22,12 +12,18 @@ function Row({ label, value, host }: { label: string; value: string; host: strin
 export default function About() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [changelog, setChangelog] = useState<ChangelogEntry[]>([])
+  const [sysinfo, setSysinfo] = useState<SystemInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getProfile(), getChangelog()])
-      .then(([p, c]) => { setProfile(p.data); setChangelog(c.data) })
+    Promise.all([getProfile(), getChangelog(), getSystemInfo()])
+      .then(([p, c, s]) => { setProfile(p.data); setChangelog(c.data); setSysinfo(s.data) })
       .finally(() => setLoading(false))
+
+    const interval = setInterval(() => {
+      getSystemInfo().then((s) => setSysinfo(s.data))
+    }, 500)
+    return () => clearInterval(interval)
   }, [])
 
   if (loading) return <p className="text-zinc-500 text-sm">loading...</p>
@@ -97,16 +93,32 @@ export default function About() {
       {/* Stack e infra */}
       <div>
         <p className="text-zinc-600 text-xs mb-6">
-          <span className="text-zinc-500">$</span> docker inspect blog
+          <span className="text-zinc-500">$</span> neofetch
         </p>
-        <div>
-          <div className="flex items-baseline gap-2 pb-2 text-xs text-zinc-600 border-b border-zinc-800">
-            <span className="w-20 shrink-0">servicio</span>
-            <span className="flex-1">tecnología</span>
-            <span>host</span>
+        {sysinfo ? (
+          <div className="border border-zinc-800 rounded p-4 space-y-2 text-xs">
+            {[
+              ['hostname',  sysinfo.hostname],
+              ['os',        sysinfo.os],
+              ['arch',      sysinfo.arch],
+              ['ip',        sysinfo.ip],
+              ['uptime',    sysinfo.uptime],
+              ['cpu',       `${sysinfo.cpu_count} cores · ${sysinfo.cpu_percent}%`],
+              ['memory',    `${sysinfo.mem_used_mb} / ${sysinfo.mem_total_mb} MB`],
+              ['disk',      `${sysinfo.disk_used_gb} / ${sysinfo.disk_total_gb} GB`],
+            ].map(([k, v]) => (
+              <div key={k} className="flex items-center gap-2">
+                <span className="text-zinc-600 w-20 shrink-0">{k}</span>
+                <span className="text-zinc-300">{v}</span>
+                {k === 'memory' && <Bar percent={sysinfo.mem_percent} />}
+                {k === 'disk' && <Bar percent={sysinfo.disk_percent} />}
+                {k === 'cpu' && <Bar percent={sysinfo.cpu_percent} />}
+              </div>
+            ))}
           </div>
-          {STACK.map((s) => <Row key={s.label} {...s} />)}
-        </div>
+        ) : (
+          <p className="text-zinc-600 text-xs">unavailable</p>
+        )}
       </div>
 
       {/* PDF */}

@@ -46,6 +46,23 @@ export const createChangelogEntry = (data: { version: string; description: strin
   api.post<ChangelogEntry>('/changelog', data)
 export const deleteChangelogEntry = (id: number) => api.delete(`/changelog/${id}`)
 
+export interface SystemInfo {
+  hostname: string
+  os: string
+  arch: string
+  ip: string
+  cpu_count: number
+  cpu_percent: number
+  mem_total_mb: number
+  mem_used_mb: number
+  mem_percent: number
+  disk_total_gb: number
+  disk_used_gb: number
+  disk_percent: number
+  uptime: string
+}
+
+export const getSystemInfo = () => api.get<SystemInfo>('/system')
 export const getProfile = () => api.get<Profile>('/profile')
 export const updateProfile = (data: { name: string; bio: string }) => api.put<Profile>('/profile', data)
 export const deletePhoto = () => api.delete<Profile>('/profile/photo')
