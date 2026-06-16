@@ -21,8 +21,6 @@ if ! command -v node &>/dev/null || [ "$(node -e 'process.stdout.write(process.v
   apt-get install -y nodejs
 fi
 
-echo "==> Node $(node -v), npm $(npm -v)"
-
 # ── Clonar / actualizar repo ──────────────────────────────────────────────────
 if [ -d "$CLONE_DIR/.git" ]; then
   echo "==> Actualizando repo..."
@@ -35,11 +33,14 @@ fi
 REPO_DIR="$CLONE_DIR"
 
 # ── Frontend ──────────────────────────────────────────────────────────────────
-echo "==> Instalando dependencias npm (puede tardar)..."
-cd "$REPO_DIR/frontend"
-npm install --prefer-offline || npm install
-echo "==> Construyendo frontend..."
-npm run build
+# El dist se buildea en la PC de desarrollo y se sube al repo.
+# El CT solo copia — no necesita Node.
+if [ ! -d "$REPO_DIR/backend/public/assets" ]; then
+  echo "ERROR: no se encontró el dist del frontend en backend/public/"
+  echo "Ejecutá 'npm run build' en tu PC y commiteá el resultado antes de deployar."
+  exit 1
+fi
+echo "==> Frontend dist encontrado, saltando build..."
 
 echo "==> Copiando dist a $DIST_DIR..."
 mkdir -p "$DIST_DIR/static"
