@@ -1,9 +1,6 @@
-import os
-
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
 
 from auth import create_token, verify_password, BLOG_USER
 from database import engine, get_db, Base
@@ -43,7 +40,3 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
     return {"access_token": create_token({"sub": form.username}), "token_type": "bearer"}
 
-
-frontend_dir = os.path.join(os.path.dirname(__file__), "public")
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
