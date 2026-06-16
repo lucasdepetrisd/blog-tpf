@@ -33,11 +33,13 @@ function ProxmoxNode({ data }: { data: { label: string } }) {
   )
 }
 
+const hStyle = { background: '#52525b', border: 'none', width: 6, height: 6 }
+
 function InternetNode({ data }: { data: { label: string } }) {
   return (
     <div className="bg-zinc-950 border border-zinc-700 rounded px-3 py-2 text-xs text-zinc-400 text-center">
       {data.label}
-      <Handle type="source" position={Position.Right} style={{ background: '#52525b', border: 'none' }} />
+      <Handle id="right" type="source" position={Position.Right} style={hStyle} />
     </div>
   )
 }
@@ -45,13 +47,15 @@ function InternetNode({ data }: { data: { label: string } }) {
 function ServiceNode({ data }: { data: { label: string; sub: string; status: boolean | null } }) {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs space-y-0.5 min-w-[130px]">
-      <Handle type="target" position={Position.Left} style={{ background: '#52525b', border: 'none' }} />
+      <Handle id="left"   type="target" position={Position.Left}   style={hStyle} />
+      <Handle id="top"    type="target" position={Position.Top}    style={hStyle} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={hStyle} />
+      <Handle id="right"  type="source" position={Position.Right}  style={hStyle} />
       <div className="flex items-center gap-1.5">
         <Dot ok={data.status} />
         <span className="text-zinc-100 font-medium">{data.label}</span>
       </div>
       <p className="text-zinc-600 pl-3">{data.sub}</p>
-      <Handle type="source" position={Position.Right} style={{ background: '#52525b', border: 'none' }} />
     </div>
   )
 }
@@ -59,7 +63,8 @@ function ServiceNode({ data }: { data: { label: string; sub: string; status: boo
 function DbNode({ data }: { data: { label: string; sub: string; status: boolean | null } }) {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs space-y-0.5 min-w-[130px]">
-      <Handle type="target" position={Position.Left} style={{ background: '#52525b', border: 'none' }} />
+      <Handle id="left" type="target" position={Position.Left}  style={hStyle} />
+      <Handle id="top"  type="target" position={Position.Top}   style={hStyle} />
       <div className="flex items-center gap-1.5">
         <Dot ok={data.status} />
         <span className="text-zinc-100 font-medium">{data.label}</span>
@@ -107,7 +112,7 @@ export default function InfraGraph() {
       id: 'proxmox',
       type: 'proxmox',
       position: { x: 140, y: 40 },
-      style: { width: 560, height: 300 },
+      style: { width: 560, height: 340, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'Proxmox VE · UTN FRT' },
     },
 
@@ -118,8 +123,8 @@ export default function InfraGraph() {
       parentId: 'proxmox',
       extent: 'parent',
       position: { x: 20, y: 40 },
-      style: { width: 260, height: 230 },
-      data: { label: 'CT 206', ip: '10.0.0.206' },
+      style: { width: 260, height: 270, background: 'transparent', border: 'none', padding: 0 },
+      data: { label: 'CT 43362480A', ip: '172.16.90.206' },
     },
     {
       id: 'nginx',
@@ -142,7 +147,7 @@ export default function InfraGraph() {
       type: 'service',
       parentId: 'ct206',
       extent: 'parent',
-      position: { x: 20, y: 180 },
+      position: { x: 20, y: 190 },
       data: { label: 'React', sub: 'static files', status: api },
     },
 
@@ -153,8 +158,8 @@ export default function InfraGraph() {
       parentId: 'proxmox',
       extent: 'parent',
       position: { x: 310, y: 40 },
-      style: { width: 220, height: 120 },
-      data: { label: 'CT 207', ip: '10.0.0.207' },
+      style: { width: 220, height: 120, background: 'transparent', border: 'none', padding: 0 },
+      data: { label: 'CT 43362480DB', ip: '172.16.90.207' },
     },
     {
       id: 'db',
@@ -167,11 +172,16 @@ export default function InfraGraph() {
   ]
 
   const edges: Edge[] = [
-    { id: 'e1', source: 'internet',  target: 'nginx',    animated: true,  style: animatedEdge },
-    { id: 'e2', source: 'nginx',     target: 'api',      animated: true,  style: animatedEdge },
-    { id: 'e3', source: 'nginx',     target: 'frontend', animated: false, style: edgeStyle },
-    { id: 'e4', source: 'api',       target: 'db',       animated: true,  style: animatedEdge },
-    { id: 'e5', source: 'frontend',  target: 'api',      animated: true,  style: animatedEdge },
+    // Internet → nginx: horizontal (right→left)
+    { id: 'e1', source: 'internet', sourceHandle: 'right',  target: 'nginx',    targetHandle: 'left',   animated: true,  style: animatedEdge },
+    // nginx → FastAPI: vertical dentro de CT 206 (bottom→top)
+    { id: 'e2', source: 'nginx',    sourceHandle: 'bottom', target: 'api',      targetHandle: 'top',    animated: true,  style: animatedEdge },
+    // nginx → React: vertical dentro de CT 206 (bottom→top, skip FastAPI)
+    { id: 'e3', source: 'api',      sourceHandle: 'bottom', target: 'frontend', targetHandle: 'top',    animated: false, style: edgeStyle },
+    // FastAPI → PostgreSQL: cross-CT horizontal (right→left)
+    { id: 'e4', source: 'api',      sourceHandle: 'right',  target: 'db',       targetHandle: 'left',   animated: true,  style: animatedEdge },
+    // React → FastAPI: bidireccional, usamos right→bottom para no solapar e2
+    { id: 'e5', source: 'frontend', sourceHandle: 'right',  target: 'api',      targetHandle: 'bottom', animated: true,  style: animatedEdge },
   ]
 
   return (
