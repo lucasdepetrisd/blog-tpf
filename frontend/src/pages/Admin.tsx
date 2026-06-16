@@ -261,14 +261,14 @@ function ChangelogTab() {
             value={version}
             onChange={(e) => setVersion(e.target.value)}
             placeholder="v1.0.0"
-            className={inputClass + ' flex-1'}
+            className={inputClass + ' w-32'}
             required
           />
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className={inputClass + ' w-40'}
+            className={inputClass + ' flex-1'}
             required
           />
         </div>
