@@ -37,7 +37,7 @@ REPO_DIR="$CLONE_DIR"
 # ── Frontend ──────────────────────────────────────────────────────────────────
 echo "==> Instalando dependencias npm (puede tardar)..."
 cd "$REPO_DIR/frontend"
-npm ci
+npm install --prefer-offline || npm install
 echo "==> Construyendo frontend..."
 npm run build
 
