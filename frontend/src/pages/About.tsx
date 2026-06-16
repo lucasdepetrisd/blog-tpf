@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getProfile, getChangelog, getSystemInfo, type Profile, type ChangelogEntry, type SystemInfo } from '../api'
+import InfraGraph from '../components/InfraGraph'
 
 function Bar({ percent }: { percent: number }) {
   return (
@@ -20,10 +21,9 @@ export default function About() {
       .then(([p, c, s]) => { setProfile(p.data); setChangelog(c.data); setSysinfo(s.data) })
       .finally(() => setLoading(false))
 
-    const interval = setInterval(() => {
-      getSystemInfo().then((s) => setSysinfo(s.data))
-    }, 500)
-    return () => clearInterval(interval)
+    const es = new EventSource('/api/system/stream')
+    es.onmessage = (e) => setSysinfo(JSON.parse(e.data))
+    return () => es.close()
   }, [])
 
   if (loading) return <p className="text-zinc-500 text-sm">loading...</p>
@@ -90,10 +90,46 @@ export default function About() {
         </div>
       </div>
 
-      {/* Stack e infra */}
+      {/* Diagrama de infraestructura */}
+      <div>
+        <p className="text-zinc-600 text-xs mb-6">
+          <span className="text-zinc-500">$</span> kubectl get pods
+        </p>
+        <InfraGraph />
+      </div>
+
+      {/* Stack */}
+      <div>
+        <p className="text-zinc-600 text-xs mb-6">
+          <span className="text-zinc-500">$</span> docker inspect blog
+        </p>
+        <div>
+          <div className="flex gap-2 pb-2 text-xs text-zinc-600 border-b border-zinc-800">
+            <span className="w-20 shrink-0">servicio</span>
+            <span className="flex-1">tecnología</span>
+            <span>host</span>
+          </div>
+          {[
+            { label: 'frontend', value: 'React 19 + TypeScript + Vite',    host: 'CT 206 · 10.0.0.206' },
+            { label: 'backend',  value: 'FastAPI + SQLAlchemy + Uvicorn',   host: 'CT 206 · 10.0.0.206' },
+            { label: 'database', value: 'PostgreSQL 16',                    host: 'CT 207 · 10.0.0.207' },
+            { label: 'proxy',    value: 'nginx (reverse proxy)',            host: 'CT 206 · 10.0.0.206' },
+            { label: 'infra',    value: 'Proxmox VE · LXC containers',     host: 'UTN FRT' },
+          ].map(({ label, value, host }) => (
+            <div key={label} className="flex gap-2 py-2 border-b border-zinc-900 text-xs">
+              <span className="text-zinc-600 w-20 shrink-0">{label}</span>
+              <span className="text-zinc-300 flex-1">{value}</span>
+              <span className="text-zinc-600 tabular-nums">{host}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sistema en vivo */}
       <div>
         <p className="text-zinc-600 text-xs mb-6">
           <span className="text-zinc-500">$</span> neofetch
+          <span className="text-zinc-700 ml-2 animate-pulse">●</span>
         </p>
         {sysinfo ? (
           <div className="border border-zinc-800 rounded p-4 space-y-2 text-xs">
