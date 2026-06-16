@@ -7,19 +7,16 @@ from fastapi.staticfiles import StaticFiles
 
 from auth import create_token, verify_password, BLOG_USER
 from database import engine, get_db, Base
-from routers import posts, profile
+from routers import posts, profile, changelog
 import models
 
 Base.metadata.create_all(bind=engine)
-
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-os.makedirs(STATIC_DIR, exist_ok=True)
 
 
 def init_db():
     db = next(get_db())
     if not db.query(models.Profile).first():
-        db.add(models.Profile(name="Lucas Depetris", bio="", photo_url=""))
+        db.add(models.Profile(name="Lucas Depetris", bio=""))
         db.commit()
 
 
@@ -36,6 +33,7 @@ app.add_middleware(
 
 app.include_router(posts.router)
 app.include_router(profile.router)
+app.include_router(changelog.router)
 
 
 @app.post("/api/auth/login")
@@ -44,8 +42,6 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
     return {"access_token": create_token({"sub": form.username}), "token_type": "bearer"}
 
-
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 frontend_dir = os.path.join(os.path.dirname(__file__), "public")
 if os.path.exists(frontend_dir):

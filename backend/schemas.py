@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel
 
 
@@ -18,6 +18,22 @@ class PostResponse(BaseModel):
         from_attributes = True
 
 
+class ChangelogCreate(BaseModel):
+    version: str
+    description: str
+    date: date
+
+
+class ChangelogResponse(BaseModel):
+    id: int
+    version: str
+    description: str
+    date: date
+
+    class Config:
+        from_attributes = True
+
+
 class ProfileUpdate(BaseModel):
     name: str
     bio: str
@@ -26,7 +42,7 @@ class ProfileUpdate(BaseModel):
 class ProfileResponse(BaseModel):
     name: str
     bio: str
-    photo_url: str
+    has_photo: bool
 
     class Config:
         from_attributes = True
