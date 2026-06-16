@@ -9,8 +9,8 @@ DB_NAME="${DB_NAME:-blog_db}"
 APP_HOST="${APP_HOST:-172.16.90.206}"  # CT que puede conectarse
 
 echo "==> Instalando dependencias..."
-apt-get update -qq
-apt-get install -y -qq postgresql postgresql-contrib curl ca-certificates
+apt-get update
+apt-get install -y postgresql postgresql-contrib curl ca-certificates
 
 systemctl enable postgresql
 systemctl start postgresql

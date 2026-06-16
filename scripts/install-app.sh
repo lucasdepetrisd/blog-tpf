@@ -11,8 +11,8 @@ BACKEND_DIR="/opt/blog/backend"
 SERVICE_FILE="/etc/systemd/system/blog.service"
 
 echo "==> Instalando dependencias del sistema..."
-apt-get update -qq
-apt-get install -y -qq git nginx python3 python3-pip python3-venv curl ca-certificates
+apt-get update
+apt-get install -y git nginx python3 python3-pip python3-venv curl ca-certificates
 
 # Node 20 via nodesource
 if ! command -v node &>/dev/null || [ "$(node -e 'process.stdout.write(process.version.split(".")[0].slice(1))')" -lt 20 ]; then
@@ -20,6 +20,8 @@ if ! command -v node &>/dev/null || [ "$(node -e 'process.stdout.write(process.v
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt-get install -y nodejs
 fi
+
+echo "==> Node $(node -v), npm $(npm -v)"
 
 # ── Clonar / actualizar repo ──────────────────────────────────────────────────
 if [ -d "$CLONE_DIR/.git" ]; then
@@ -32,18 +34,11 @@ fi
 
 REPO_DIR="$CLONE_DIR"
 
-# Node 20+ requerido para Vite
-NODE_VERSION=$(node -e "process.exit(parseInt(process.version.slice(1)) < 20 ? 1 : 0)" 2>/dev/null && echo ok || echo old)
-if [ "$NODE_VERSION" = "old" ]; then
-  echo "==> Actualizando Node.js a v20..."
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt-get install -y nodejs
-fi
-
 # ── Frontend ──────────────────────────────────────────────────────────────────
-echo "==> Construyendo frontend..."
+echo "==> Instalando dependencias npm (puede tardar)..."
 cd "$REPO_DIR/frontend"
-npm ci --silent
+npm ci
+echo "==> Construyendo frontend..."
 npm run build
 
 echo "==> Copiando dist a $DIST_DIR..."
@@ -58,7 +53,7 @@ rsync -a --exclude='.venv' --exclude='__pycache__' --exclude='public' \
 
 cd "$BACKEND_DIR"
 python3 -m venv .venv
-.venv/bin/pip install --quiet -r requirements.txt
+.venv/bin/pip install -r requirements.txt
 
 # Crear .env si no existe
 if [ ! -f "$BACKEND_DIR/.env" ]; then
