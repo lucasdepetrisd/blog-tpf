@@ -24,7 +24,7 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=PostResponse)
 def create_post(post: PostCreate, db: Session = Depends(get_db), _: str = Depends(get_current_user)):
-    db_post = models.Post(title=post.title, content=post.content)
+    db_post = models.Post(title=post.title, content=post.content, tags=post.tags)
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -38,6 +38,7 @@ def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db), _
         raise HTTPException(status_code=404, detail="Post no encontrado")
     db_post.title = post.title  # type: ignore
     db_post.content = post.content  # type: ignore
+    db_post.tags = post.tags  # type: ignore
     db.commit()
     db.refresh(db_post)
     return db_post

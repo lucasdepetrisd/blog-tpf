@@ -38,7 +38,18 @@ export default function PostDetail() {
       <h1 className="text-2xl font-semibold text-zinc-100 mt-4 mb-2 leading-tight">
         {post!.title}
       </h1>
-      <p className="text-zinc-600 text-xs mb-8">{formatDate(post!.created_at)}</p>
+      <div className="flex items-center gap-3 mb-8">
+        <p className="text-zinc-600 text-xs">{formatDate(post!.created_at)}</p>
+        {post!.tags && (
+          <div className="flex gap-1.5 flex-wrap">
+            {post!.tags.split(',').map((t) => t.trim()).filter(Boolean).map((t) => (
+              <span key={t} className="bg-zinc-900 border border-zinc-800 text-zinc-500 text-xs px-2 py-0.5 rounded">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="prose-md">
         <ReactMarkdown
           components={{

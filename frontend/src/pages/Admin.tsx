@@ -24,18 +24,33 @@ function PostForm({
   onCancel,
 }: {
   initial?: Post
-  onSave: (title: string, content: string) => Promise<void>
+  onSave: (title: string, content: string, tags: string) => Promise<void>
   onCancel: () => void
 }) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [content, setContent] = useState(initial?.content ?? '')
+  const [tags, setTags] = useState<string[]>(
+    initial?.tags ? initial.tags.split(',').map((t) => t.trim()).filter(Boolean) : []
+  )
+  const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const addTag = (val: string) => {
+    const t = val.trim().toLowerCase()
+    if (t && !tags.includes(t)) setTags([...tags, t])
+    setTagInput('')
+  }
+
+  const handleTagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput) }
+    if (e.key === 'Backspace' && !tagInput && tags.length) setTags(tags.slice(0, -1))
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSaving(true)
     try {
-      await onSave(title, content)
+      await onSave(title, content, tags.join(','))
     } finally {
       setSaving(false)
     }
@@ -58,6 +73,24 @@ function PostForm({
         className={inputClass + ' resize-y'}
         required
       />
+      <div className={`${inputClass} flex flex-wrap gap-1.5 min-h-[38px] cursor-text`}
+        onClick={(e) => (e.currentTarget.querySelector('input') as HTMLInputElement)?.focus()}>
+        {tags.map((t) => (
+          <span key={t} className="flex items-center gap-1 bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded">
+            {t}
+            <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))}
+              className="text-zinc-500 hover:text-zinc-200">×</button>
+          </span>
+        ))}
+        <input
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={handleTagKey}
+          onBlur={() => tagInput && addTag(tagInput)}
+          placeholder={tags.length === 0 ? 'tags (Enter o coma para agregar)' : ''}
+          className="bg-transparent outline-none text-sm text-zinc-100 placeholder-zinc-600 flex-1 min-w-[120px]"
+        />
+      </div>
       <div className="flex gap-2">
         <button type="submit" disabled={saving} className={btnPrimary}>
           {saving ? 'saving...' : initial ? 'update' : 'publish'}
@@ -78,15 +111,15 @@ function PostsTab() {
   const load = () => getPosts().then((r) => setPosts(r.data))
   useEffect(() => { load() }, [])
 
-  const handleCreate = async (title: string, content: string) => {
-    await createPost({ title, content })
+  const handleCreate = async (title: string, content: string, tags: string) => {
+    await createPost({ title, content, tags })
     setCreating(false)
     load()
   }
 
-  const handleUpdate = async (title: string, content: string) => {
+  const handleUpdate = async (title: string, content: string, tags: string) => {
     if (!editing) return
-    await updatePost(editing.id, { title, content })
+    await updatePost(editing.id, { title, content, tags })
     setEditing(null)
     load()
   }

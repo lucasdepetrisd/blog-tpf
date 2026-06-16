@@ -1,18 +1,26 @@
 from datetime import datetime, date
-from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel, field_validator
 
 
 class PostCreate(BaseModel):
     title: str
     content: str
+    tags: str = ""
 
 
 class PostResponse(BaseModel):
     id: int
     title: str
     content: str
+    tags: Optional[str] = ""
     created_at: datetime
     updated_at: datetime
+
+    @field_validator('tags', mode='before')
+    @classmethod
+    def coerce_tags(cls, v: object) -> str:
+        return v if isinstance(v, str) else ""
 
     class Config:
         from_attributes = True

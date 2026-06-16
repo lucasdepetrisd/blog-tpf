@@ -12,6 +12,7 @@ export interface Post {
   id: number
   title: string
   content: string
+  tags: string
   created_at: string
   updated_at: string
 }
@@ -29,8 +30,8 @@ export const login = (username: string, password: string) => {
 
 export const getPosts = () => api.get<Post[]>('/posts')
 export const getPost = (id: number) => api.get<Post>(`/posts/${id}`)
-export const createPost = (data: { title: string; content: string }) => api.post<Post>('/posts', data)
-export const updatePost = (id: number, data: { title: string; content: string }) => api.put<Post>(`/posts/${id}`, data)
+export const createPost = (data: { title: string; content: string; tags: string }) => api.post<Post>('/posts', data)
+export const updatePost = (id: number, data: { title: string; content: string; tags: string }) => api.put<Post>(`/posts/${id}`, data)
 export const deletePost = (id: number) => api.delete(`/posts/${id}`)
 
 export interface ChangelogEntry {

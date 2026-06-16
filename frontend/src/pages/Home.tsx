@@ -52,6 +52,7 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [activeTag, setActiveTag] = useState<string | null>(null)
   const { displayed, done } = useTyping(PROMPT)
 
   useEffect(() => {
@@ -62,9 +63,9 @@ export default function Home() {
 
   if (loading) return <p className="text-zinc-500 text-sm">loading...</p>
 
-  const filtered = search.trim()
-    ? posts.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()))
-    : posts
+  const filtered = posts
+    .filter((p) => !search.trim() || p.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((p) => !activeTag || p.tags?.split(',').map((t) => t.trim()).includes(activeTag))
 
   const years = [...new Set(filtered.map((p) => new Date(p.created_at).getFullYear()))].sort((a, b) => b - a)
 
@@ -103,6 +104,13 @@ export default function Home() {
           )}
         </div>
 
+        {activeTag && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded">{activeTag}</span>
+            <button onClick={() => setActiveTag(null)} className="text-zinc-600 hover:text-zinc-400">× clear</button>
+          </div>
+        )}
+
         {filtered.length === 0 && (
           <p className="text-zinc-600 text-sm">no posts found.</p>
         )}
@@ -130,6 +138,23 @@ export default function Home() {
                       </div>
                     </div>
                     <p className="text-zinc-600 text-xs mt-1 truncate">{firstLine(post.content)}</p>
+                    {post.tags && (
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {post.tags.split(',').map((t) => t.trim()).filter(Boolean).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setActiveTag(activeTag === t ? null : t)}
+                            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                              activeTag === t
+                                ? 'bg-zinc-700 border-zinc-600 text-zinc-200'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-400'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </article>
                 ))}
             </div>
