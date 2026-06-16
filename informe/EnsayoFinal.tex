@@ -1,0 +1,349 @@
+\documentclass[twoside, 11pt, a4paper]{article}
+
+\input{./plantillaFinal}
+\DeclareMathSizes{11}{17.28}{9}{7}
+\usepackage{kpfonts}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\renewcommand{\arraystretch}{2}
+
+% Gráficas
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{multicol}
+
+\newcommand{\imagenInforme}[3]{
+    \begin{figure}[H]
+        \centering
+        \IfFileExists{#1}{
+            \includegraphics[width=0.92\textwidth]{#1}
+        }{
+            \fbox{
+                \begin{minipage}[c][5cm][c]{0.88\textwidth}
+                    \centering
+                    Imagen pendiente: #1
+                \end{minipage}
+            }
+        }
+        \caption{\textbf{#2.} #3}
+    \end{figure}
+}
+
+\begin{document}
+    \captionsetup[figure]{labelformat=empty}
+
+    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\footnotesize}
+
+    \input{./portadaFinal}
+
+    \backgroundsetup{contents = {}}
+
+    \newpage
+
+    \tableofcontents
+    \newpage
+
+    \section{Introducción}
+
+    El presente informe documenta el Trabajo Práctico Final de la materia Virtualización, cuyo objetivo fue implementar un servicio de blog personal sobre infraestructura de contenedores en Proxmox. La solución desarrollada integra una aplicación web con frontend, backend, base de datos y servidor web, distribuida en dos contenedores LXC.
+
+    El sistema permite publicar y administrar entradas de blog, mostrar información personal del alumno, cargar una imagen de perfil, consultar información técnica de la infraestructura y ofrecer el informe final en formato PDF desde el propio sitio. El desarrollo se realizó con React, FastAPI, PostgreSQL y nginx, respetando la separación de responsabilidades entre aplicación y base de datos.
+
+    La implementación se desplegó en la red provista para la práctica, utilizando los contenedores \texttt{43362480A} para la aplicación y \texttt{43362480DB} para la base de datos. El acceso externo previsto se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}.
+
+    \section{Contexto}
+
+    La virtualización permite ejecutar múltiples entornos aislados sobre una misma infraestructura física. En este trabajo se utilizó Proxmox VE como plataforma de administración de contenedores LXC, lo que permitió crear servicios independientes con recursos asignados de CPU, memoria, disco y red.
+
+    El caso de uso elegido fue un blog personal. Aunque se trata de una aplicación simple desde el punto de vista funcional, resulta adecuada para aplicar conceptos centrales de la materia: creación de contenedores, direccionamiento IP, instalación de servicios, exposición mediante proxy inverso, comunicación entre contenedores y despliegue de una aplicación web completa.
+
+    \section{Objetivos}
+
+    \subsection{Objetivo General}
+
+    Implementar un blog personal funcional sobre contenedores LXC administrados con Proxmox, separando la aplicación web de la base de datos y publicando el servicio mediante nginx.
+
+    \subsection{Objetivos Específicos}
+
+    \begin{itemize}
+        \item Crear y configurar dos contenedores LXC para la aplicación y la base de datos.
+        \item Instalar y configurar PostgreSQL como motor de persistencia.
+        \item Desarrollar un backend con FastAPI para exponer la API del blog.
+        \item Desarrollar un frontend con React y TypeScript para la interfaz de usuario.
+        \item Configurar nginx como servidor web y proxy inverso hacia el backend.
+        \item Implementar autenticación para las operaciones administrativas.
+        \item Permitir la administración de publicaciones, perfil personal, foto y registro de cambios.
+        \item Publicar el informe del trabajo práctico en formato PDF desde el sitio.
+    \end{itemize}
+
+    \section{Marco Teórico}
+
+    \subsection{Virtualización y Contenedores LXC}
+
+    La virtualización consiste en abstraer recursos físicos para ejecutar sistemas aislados sobre un mismo host. A diferencia de una máquina virtual completa, un contenedor LXC comparte el kernel del sistema anfitrión, pero mantiene su propio espacio de procesos, red, sistema de archivos y configuración.
+
+    Esta característica hace que los contenedores sean livianos y adecuados para servicios pequeños. En el trabajo se asignaron recursos limitados a cada contenedor: 128 MB de RAM, 1 CPU y 8 GB de disco, lo que exigió una implementación simple y eficiente.
+
+    \subsection{Proxmox VE}
+
+    Proxmox VE es una plataforma de virtualización que permite administrar máquinas virtuales y contenedores desde una interfaz web. En este proyecto se utilizó para crear los contenedores, asignar recursos, configurar la red y operar los servicios necesarios.
+
+    Cada contenedor recibió un nombre asociado al DNI del alumno y una dirección IP dentro de la red \texttt{172.16.90.0/24}. La IP se definió siguiendo el criterio de la consigna: \texttt{172.16.90.ID}, donde \texttt{ID} corresponde al identificador asignado por Proxmox.
+
+    \subsection{Arquitectura Web}
+
+    La aplicación se organizó en tres capas principales:
+
+    \begin{itemize}
+        \item \textbf{Frontend:} interfaz de usuario construida con React, TypeScript y Vite.
+        \item \textbf{Backend:} API REST desarrollada con FastAPI y SQLAlchemy.
+        \item \textbf{Base de datos:} persistencia en PostgreSQL.
+    \end{itemize}
+
+    Esta separación facilita el mantenimiento y permite que cada componente tenga responsabilidades claras. El frontend consume la API mediante rutas bajo \texttt{/api}; el backend procesa la lógica de negocio y la base de datos conserva la información persistente.
+
+    \subsection{Proxy Inverso}
+
+    nginx se utilizó como servidor web y proxy inverso. Su función es servir los archivos estáticos generados por la compilación de React y redirigir las solicitudes de API hacia Uvicorn, que ejecuta la aplicación FastAPI en el puerto \texttt{8000}.
+
+    Esta configuración permite exponer un único punto de entrada HTTP, manteniendo oculto el puerto interno del backend y simplificando el acceso desde el navegador.
+
+    \section{Desarrollo del Proyecto}
+
+    \subsection{Planificación}
+
+    El desarrollo se organizó en fases: base de datos, backend, frontend, nginx, publicación del informe y acceso externo. Esta división permitió validar cada capa de manera independiente antes de integrarlas.
+
+    La consigna establecía dos contenedores: uno para el blog personal y otro para la base de datos. La implementación final respetó esa separación y agregó funciones administrativas para facilitar la actualización del sitio sin modificar archivos manualmente.
+
+    \subsection{Infraestructura Implementada}
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|l|l|l|p{5.8cm}|}
+            \hline
+            \textbf{Contenedor} & \textbf{Nombre} & \textbf{IP} & \textbf{Servicios} \\
+            \hline
+            Aplicación & \texttt{43362480A} & \texttt{172.16.90.206} & nginx, frontend React, backend FastAPI y Uvicorn \\
+            \hline
+            Base de datos & \texttt{43362480DB} & \texttt{172.16.90.207} & PostgreSQL 16 \\
+            \hline
+        \end{tabular}
+        \caption{Contenedores utilizados en la implementación}
+    \end{table}
+
+    El contenedor de aplicación concentra los servicios necesarios para atender solicitudes web. El contenedor de base de datos queda separado para mantener la persistencia aislada y permitir que el backend se conecte mediante la red interna.
+
+    \subsection{Pila Tecnológica}
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|l|l|}
+            \hline
+            \textbf{Componente} & \textbf{Tecnología} \\
+            \hline
+            Frontend & React 19, TypeScript, Vite y Tailwind CSS \\
+            Backend & Python, FastAPI, SQLAlchemy y Uvicorn \\
+            Base de datos & PostgreSQL 16 \\
+            Servidor web & nginx \\
+            Infraestructura & Proxmox VE con contenedores LXC \\
+            Autenticación & JWT, OAuth2 con tokens Bearer y bcrypt \\
+            \hline
+        \end{tabular}
+        \caption{Tecnologías utilizadas}
+    \end{table}
+
+    \subsection{Backend}
+
+    El backend fue desarrollado con FastAPI. Al iniciar, crea las tablas necesarias mediante SQLAlchemy y registra un perfil inicial con el nombre del alumno si no existe información previa.
+
+    La configuración de conexión a PostgreSQL se toma desde variables de entorno:
+
+    \begin{verbatim}
+DB_USER
+DB_PASSWORD
+DB_HOST
+DB_PORT
+DB_NAME
+    \end{verbatim}
+
+    Los módulos principales del backend son:
+
+    \begin{itemize}
+        \item \texttt{main.py}: inicializa la aplicación FastAPI, CORS, routers y login.
+        \item \texttt{database.py}: define la conexión a PostgreSQL y la sesión de SQLAlchemy.
+        \item \texttt{models.py}: declara los modelos \texttt{Post}, \texttt{Profile} y \texttt{Changelog}.
+        \item \texttt{schemas.py}: define los esquemas de entrada y salida con Pydantic.
+        \item \texttt{auth.py}: gestiona autenticación, hash de contraseña y emisión de tokens JWT.
+    \end{itemize}
+
+    \subsection{API}
+
+    La API expone puntos de acceso públicos para lectura y puntos de acceso protegidos para administración. Las operaciones de creación, edición y eliminación requieren un token válido.
+
+    \begin{table}[H]
+        \centering
+        \small
+        \begin{tabular}{|l|l|p{7cm}|}
+            \hline
+            \textbf{Método} & \textbf{Ruta} & \textbf{Descripción} \\
+            \hline
+            POST & \texttt{/api/auth/login} & Autentica al administrador y devuelve un token JWT. \\
+            \hline
+            GET & \texttt{/api/posts} & Lista las entradas publicadas. \\
+            \hline
+            GET & \texttt{/api/posts/\{id\}} & Obtiene el detalle de una entrada. \\
+            \hline
+            POST & \texttt{/api/posts} & Crea una nueva entrada. Requiere autenticación. \\
+            \hline
+            PUT & \texttt{/api/posts/\{id\}} & Actualiza una entrada existente. Requiere autenticación. \\
+            \hline
+            DELETE & \texttt{/api/posts/\{id\}} & Elimina una entrada. Requiere autenticación. \\
+            \hline
+            GET & \texttt{/api/profile} & Devuelve los datos del perfil. \\
+            \hline
+            PUT & \texttt{/api/profile} & Actualiza nombre y biografía. Requiere autenticación. \\
+            \hline
+            POST & \texttt{/api/profile/photo} & Carga la foto de perfil. Requiere autenticación. \\
+            \hline
+            GET & \texttt{/api/system} & Devuelve información del contenedor de aplicación. \\
+            \hline
+            GET & \texttt{/api/system/stream} & Envía métricas en vivo mediante Server-Sent Events. \\
+            \hline
+            GET & \texttt{/api/system/schema} & Devuelve el esquema de la base de datos para visualizarlo en el frontend. \\
+            \hline
+        \end{tabular}
+        \caption{Puntos de acceso principales del backend}
+    \end{table}
+
+    \subsection{Modelo de Datos}
+
+    La base de datos utiliza tres entidades principales:
+
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{|l|p{9cm}|}
+            \hline
+            \textbf{Tabla} & \textbf{Propósito} \\
+            \hline
+            \texttt{posts} & Almacena las entradas del blog, contenido, etiquetas y fechas de creación y actualización. \\
+            \hline
+            \texttt{profile} & Almacena nombre, biografía y foto del alumno. \\
+            \hline
+            \texttt{changelog} & Registra versiones o cambios relevantes del proyecto. \\
+            \hline
+        \end{tabular}
+        \caption{Tablas principales de PostgreSQL}
+    \end{table}
+
+    \subsection{Frontend}
+
+    El frontend fue construido con React, TypeScript y Vite. La aplicación utiliza React Router para definir las rutas principales:
+
+    \begin{itemize}
+        \item \texttt{/}: página principal con listado de posts, búsqueda, etiquetas y datos resumidos del perfil.
+        \item \texttt{/post/:id}: detalle de una publicación con soporte para Markdown, tablas y bloques de código.
+        \item \texttt{/about}: información del alumno, descripción del proyecto, acceso al informe PDF, stack técnico, diagrama de infraestructura y métricas del sistema.
+        \item \texttt{/login}: inicio de sesión del administrador.
+        \item \texttt{/admin}: panel privado para administrar publicaciones, perfil y registro de cambios.
+    \end{itemize}
+
+    El diseño visual adopta una estética sobria de terminal, con colores oscuros, tipografía compacta y navegación simple. Para mejorar la experiencia de lectura, las publicaciones soportan Markdown con resaltado de sintaxis y botón para copiar fragmentos de código.
+
+    \subsection{Administración del Blog}
+
+    El panel de administración permite actualizar el contenido sin acceder por consola al servidor. Sus funciones principales son:
+
+    \begin{itemize}
+        \item Crear, editar y eliminar publicaciones.
+        \item Agregar etiquetas a cada post.
+        \item Modificar nombre y biografía del perfil.
+        \item Cargar una foto de perfil, con recorte cuadrado antes de subirla.
+        \item Registrar entradas del registro de cambios.
+    \end{itemize}
+
+    La autenticación se realiza con usuario y contraseña configurables mediante variables de entorno. Una vez autenticado, el frontend guarda el token en el navegador y lo envía en el encabezado \texttt{Authorization} para las operaciones protegidas.
+
+    \subsection{Monitoreo e Información Técnica}
+
+    Además de las funciones requeridas por la consigna, se agregó una sección técnica en la página \texttt{/about}. Esta sección muestra:
+
+    \begin{itemize}
+        \item Arquitectura de la infraestructura con los contenedores y servicios.
+        \item Estado de la API y de la base de datos.
+        \item Información del sistema operativo, hostname, IP, CPU, memoria, disco y uptime.
+        \item Diagrama de entidad-relación generado a partir del esquema real de PostgreSQL.
+    \end{itemize}
+
+    Para las métricas en vivo se utiliza el punto de acceso \texttt{/api/system/stream}, implementado con Server-Sent Events. El backend recopila datos con \texttt{psutil} y los envía al navegador cada segundo.
+
+    \subsection{Configuración de nginx}
+
+    nginx sirve la compilación estática de React desde \texttt{/var/www/blog/dist}. Las rutas del frontend se resuelven con \texttt{try\_files}, de modo que React Router pueda manejar rutas internas como \texttt{/about} o \texttt{/admin}.
+
+    Las solicitudes a \texttt{/api/} se reenvían a FastAPI:
+
+    \begin{verbatim}
+location /api/ {
+    proxy_pass http://127.0.0.1:8000;
+}
+    \end{verbatim}
+
+    Para el punto de acceso de métricas en vivo se deshabilitó el almacenamiento intermedio de nginx, evitando que los eventos SSE queden retenidos antes de llegar al navegador.
+
+    \subsection{Publicación del Informe}
+
+    La consigna solicita que el informe en PDF esté disponible desde el blog. Para cumplirlo, la página \texttt{/about} incluye un enlace a:
+
+    \begin{verbatim}
+/static/informe.pdf
+    \end{verbatim}
+
+    Este archivo debe copiarse al contenedor de aplicación como recurso estático, de modo que pueda descargarse desde el navegador y también adjuntarse en la entrega de la tarea.
+
+    \section{Pruebas Realizadas}
+
+    Las pruebas se enfocaron en validar el funcionamiento de cada capa y la integración entre ellas:
+
+    \begin{itemize}
+        \item Acceso a la página principal y carga de publicaciones desde la API.
+        \item Visualización del detalle de posts en Markdown.
+        \item Inicio de sesión del administrador.
+        \item Creación, edición y eliminación de publicaciones.
+        \item Actualización del perfil y carga de foto.
+        \item Conexión del backend con PostgreSQL.
+        \item Respuesta del punto de acceso de verificación de estado.
+        \item Visualización de métricas del sistema en tiempo real.
+        \item Enrutamiento de nginx para frontend y API.
+    \end{itemize}
+
+    Estas pruebas permiten comprobar que el servicio funciona como una aplicación web integrada y no como componentes aislados.
+
+    \section{Resultado Final}
+
+    El resultado final es un blog personal desplegable sobre Proxmox, con separación entre aplicación y base de datos. La aplicación permite publicar contenido, administrar datos personales, mostrar información de infraestructura y descargar el informe del trabajo práctico.
+
+    La arquitectura implementada cumple con los requerimientos principales de la consigna:
+
+    \begin{itemize}
+        \item Datos personales del alumno.
+        \item Imagen personal configurable.
+        \item Página principal actualizable mediante posts.
+        \item Informe final disponible en PDF desde el blog.
+        \item Uso de dos contenedores LXC en Proxmox.
+        \item Base de datos PostgreSQL separada de la aplicación.
+        \item Exposición web mediante nginx.
+    \end{itemize}
+
+    \section{Conclusión}
+
+    El trabajo permitió integrar los conceptos de virtualización con el desarrollo y despliegue de una aplicación web real. La separación en contenedores facilitó aislar responsabilidades: un contenedor dedicado a la aplicación y otro a la persistencia.
+
+    La utilización de nginx como proxy inverso permitió publicar el frontend y el backend bajo un mismo punto de entrada. FastAPI y PostgreSQL resolvieron la lógica de negocio y la persistencia, mientras que React aportó una interfaz de usuario dinámica para administrar el contenido.
+
+    Como mejora adicional, se incorporaron métricas del sistema, visualización de infraestructura y administración del perfil, lo que convierte al blog en una entrega más completa y demostrable durante la defensa presencial.
+\end{document}
