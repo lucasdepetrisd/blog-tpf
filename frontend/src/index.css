@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+* {
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #09090b;
+  background-image: url('/lines.svg');
+  background-repeat: repeat;
+  background-size: 600px 600px;
+  color: #e4e4e7;
+  -webkit-font-smoothing: antialiased;
+}
