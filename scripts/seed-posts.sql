@@ -1,51 +1,38 @@
--- seed-posts.sql — inserta o actualiza los posts del blog
+-- seed-posts.sql — inserta los posts del blog si no existen
 -- Uso: su -c "psql -d blog_db -f /opt/blog/repo/scripts/seed-posts.sql" postgres
--- Requiere que el schema ya exista (correr schema.sql primero si es una DB nueva).
 
-INSERT INTO posts (title, content, tags, created_at, updated_at) VALUES (
+INSERT INTO posts (title, content, tags, created_at, updated_at)
+SELECT
   'Arquitectura del proyecto: dos contenedores LXC en Proxmox',
   E'Para el TPF de Virtualización decidí separar la aplicación en **dos contenedores LXC** corriendo sobre Proxmox VE en la infraestructura de la UTN FRT.\n\n## Contenedores\n\n| CT | IP | Servicios |\n|----|----|-----------|\n| 43362480A | 172.16.90.206 | React + FastAPI + nginx |\n| 43362480DB | 172.16.90.207 | PostgreSQL 16 |\n\n## Por qué LXC y no VMs\n\nLos contenedores LXC comparten el kernel del host, lo que los hace mucho más livianos que una VM completa. Un CT Debian con nginx y Python arranca en segundos y consume menos de 128MB de RAM en reposo. Para este proyecto eso es suficiente: no hay necesidad de aislar el kernel ni correr un SO diferente.\n\n## Por qué separar app y base de datos\n\nLa separación tiene sentido desde el punto de vista de seguridad y escalabilidad: si la base de datos necesita más recursos, se puede ajustar el CT sin tocar la app.\n\nEl acceso entre contenedores está restringido a nivel de `pg_hba.conf`, permitiendo conexiones **solo desde la IP del CT de la aplicación**. Cualquier otro host recibe un rechazo directo de PostgreSQL, independientemente de la red.\n\n## Un problema real: encoding de la base de datos\n\nAl crear la base de datos en Debian sin configurar el locale del sistema, PostgreSQL la inicializa con encoding `SQL_ASCII`. Cualquier carácter fuera de ASCII (tildes, ñ) genera un `UnicodeEncodeError` en Python.\n\nLa solución fue recrear la DB especificando encoding explícito:\n\n```sql\nCREATE DATABASE blog_db ENCODING ''UTF8'' LC_COLLATE ''C.UTF-8'' LC_CTYPE ''C.UTF-8'' TEMPLATE template0;\n```\n\n## nginx como punto de entrada\n\nnginx actúa como único punto de entrada:\n\n- Sirve el build estático del frontend desde `/var/www/blog/dist`\n- Hace proxy reverso hacia uvicorn para las rutas `/api/`\n- Maneja SSE deshabilitando el buffering en `/api/system/stream`',
   'infraestructura,proxmox,lxc,arquitectura',
   '2026-06-01 10:00:00+00',
   '2026-06-01 10:00:00+00'
-)
-ON CONFLICT (title) DO UPDATE
-  SET content    = EXCLUDED.content,
-      tags       = EXCLUDED.tags,
-      updated_at = now();
+WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Arquitectura del proyecto: dos contenedores LXC en Proxmox');
 
-INSERT INTO posts (title, content, tags, created_at, updated_at) VALUES (
+INSERT INTO posts (title, content, tags, created_at, updated_at)
+SELECT
   'Stack técnico: React + FastAPI + PostgreSQL',
   E'El stack elegido para este blog fue pensado para ser **simple pero representativo** de un sistema web moderno.\n\n## Frontend\n\n- **React 19** con TypeScript\n- **Vite** como bundler\n- **Tailwind v4** para estilos\n- Sin librerías de estado globales: todo con hooks locales y fetch directo a la API\n\n## Backend\n\n- **FastAPI** con SQLAlchemy como ORM\n- **psycopg2** para conectarse a PostgreSQL\n- **JWT** con python-jose para autenticación\n- **SSE** para métricas del sistema en tiempo real\n\n## Por qué SSE y no WebSockets\n\nLa pestaña *system* muestra métricas del CT (CPU, RAM, disco) actualizándose en tiempo real. Para esto se usa **Server-Sent Events** en lugar de WebSockets.\n\nSSE es unidireccional: el servidor empuja datos al cliente sin que el cliente tenga que pedir nada. Es suficiente para métricas de monitoreo y mucho más simple de implementar que un WebSocket bidireccional. nginx solo necesita `proxy_buffering off` para que los eventos lleguen en tiempo real.\n\n## Autenticación con JWT\n\nEl panel admin está protegido con JWT. Al hacer login, el backend genera un token firmado con una clave secreta. El frontend lo guarda en `localStorage` y lo incluye en cada request como `Authorization: Bearer <token>`.\n\nNo hay refresh tokens ni sesiones en base de datos: si el token expira, el usuario vuelve a hacer login.\n\n## Base de datos\n\nPostgreSQL corre en un contenedor separado. El esquema tiene dos tablas: `posts` y `profile`. Las tablas se crean automáticamente con `create_all` de SQLAlchemy al arrancar el backend, sin necesidad de correr migraciones manualmente.\n\n## Deploy\n\nEl frontend se buildea en la PC de desarrollo y se commitea el `dist/` al repo. El CT tiene solo 128MB de RAM, insuficiente para correr `npm install`, así que nginx sirve los archivos estáticos directamente desde `/var/www/blog/dist`.',
   'react,fastapi,postgresql,stack',
   '2026-06-10 10:00:00+00',
   '2026-06-10 10:00:00+00'
-)
-ON CONFLICT (title) DO UPDATE
-  SET content    = EXCLUDED.content,
-      tags       = EXCLUDED.tags,
-      updated_at = now();
+WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Stack técnico: React + FastAPI + PostgreSQL');
 
-INSERT INTO posts (title, content, tags, created_at, updated_at) VALUES (
+INSERT INTO posts (title, content, tags, created_at, updated_at)
+SELECT
   'Deploy en dos contenedores LXC: estrategia y flujo de trabajo',
   E'El proceso de despliegue del blog está pensado para un entorno con restricciones reales: los contenedores LXC tienen solo **128MB de RAM**, lo que hace imposible correr `npm install` o compilar en el servidor.\n\n## Separación de responsabilidades\n\nEl build del frontend ocurre en la PC de desarrollo. El CT solo recibe y sirve archivos ya compilados.\n\n| Paso | Dónde ocurre |\n|------|--------------|\n| `npm run build` | PC local |\n| `git push` | PC local → GitHub |\n| `git pull` + rsync | CT 43362480A |\n| restart uvicorn | CT 43362480A |\n\n## Bundle único con vite-plugin-singlefile\n\nUsamos `vite-plugin-singlefile` para empaquetar todo el frontend en un único `index.html`. El plugin inlinea el JavaScript, el CSS y los íconos SVG como data URIs dentro del HTML.\n\nEl resultado es un solo archivo de ~3.5MB que funciona sin depender de que el servidor sirva assets adicionales por separado.\n\n## Scripts de actualización\n\nPara simplificar el deploy incremental, hay dos scripts en `scripts/`:\n\n- `update-front.sh`: hace `git pull` y sincroniza el dist con rsync, preservando la carpeta `static/` donde vive el PDF subido desde el panel admin.\n- `update-nginx.sh`: hace `git pull` y recarga la configuración de nginx.\n\nEl rsync usa `--exclude=''static/''` para no borrar archivos generados en runtime que no están versionados en el repo.\n\n## Routing bajo un prefijo\n\nLa URL pública del blog vive bajo `/43362480/`. Esto requiere configurar el `basename` del router de React y prefijar todas las llamadas a la API con ese path. El valor se inyecta en tiempo de build desde `.env.production`:\n\n```\nVITE_BASENAME=/43362480\n```\n\nEn el código, todas las llamadas a la API y rutas de archivos estáticos usan `${BASE}` como prefijo, donde `BASE = import.meta.env.VITE_BASENAME || ''''`.',
   'deploy,lxc,proxmox,nginx,ci',
   '2026-06-20 10:00:00+00',
   '2026-06-20 10:00:00+00'
-)
-ON CONFLICT (title) DO UPDATE
-  SET content    = EXCLUDED.content,
-      tags       = EXCLUDED.tags,
-      updated_at = now();
+WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Deploy en dos contenedores LXC: estrategia y flujo de trabajo');
 
-INSERT INTO posts (title, content, tags, created_at, updated_at) VALUES (
+INSERT INTO posts (title, content, tags, created_at, updated_at)
+SELECT
   'Guía de uso del blog',
   E'Esta es una guía rápida para usar el blog.\n\n## Navegar el blog\n\nLa página principal muestra todos los posts ordenados por fecha. Se puede filtrar por **tag** haciendo click en cualquiera de las etiquetas, o buscar por título con la barra de búsqueda.\n\nCada post renderiza Markdown: soporta títulos, negrita, cursiva, listas, tablas y bloques de código.\n\n## Pestaña About\n\nLa sección *about* tiene cuatro pestañas:\n\n- **about**: perfil del autor y datos del proyecto\n- **infra**: diagrama interactivo de la infraestructura. El nodo de PostgreSQL es clickeable y muestra el ERD de la base de datos.\n- **system**: métricas del CT en tiempo real (CPU, RAM, disco, uptime) via SSE\n- **docs**: visor del informe en PDF (aparece solo si hay un PDF publicado)\n\n## Panel Admin\n\nEl panel de administración está en `/admin`. Requiere login con usuario y contraseña.\n\nDesde ahí se puede:\n\n- **Posts**: crear, editar y eliminar posts. Los tags se agregan con Enter o coma; al pegar texto con comas se separan automáticamente.\n- **Profile**: editar nombre y bio. La foto se puede cambiar o volver a la de GitHub.\n- **Docs**: subir el informe en PDF. Una vez subido aparece el tab *docs* en la sección about.\n\n## Markdown en posts\n\nEl contenido de los posts acepta Markdown estándar:\n\n- `**negrita**`, `*cursiva*`\n- `# Título`, `## Subtítulo`\n- Listas con `-` o `1.`\n- Tablas con `|`\n- Código con backticks o bloques con triple backtick',
   'guia,admin,uso',
   '2026-06-22 10:00:00+00',
   '2026-06-22 10:00:00+00'
-)
-ON CONFLICT (title) DO UPDATE
-  SET content    = EXCLUDED.content,
-      tags       = EXCLUDED.tags,
-      updated_at = now();
+WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Guía de uso del blog');

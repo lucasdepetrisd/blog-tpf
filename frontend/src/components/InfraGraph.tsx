@@ -154,6 +154,7 @@ const ICONS: Record<string, string> = {
   react:      'R',
   postgresql: 'P',
   internet:   '⌁',
+  proxy:      'P',
 }
 
 function Badge({ icon, color }: { icon: string; color: string }) {
@@ -278,57 +279,59 @@ const mkEdge = (animated: boolean, label?: string): Partial<Edge> => ({
 })
 
 function buildNodes(api: boolean | null, db: boolean | null, onOpenErd?: () => void): Node[] {
-  // Layout:
-  //   internet  →  [CT206: nginx | front ]
-  //                          ↓      api  ]
-  //               [CT207: postgres        ]
   return [
     { id: 'internet', type: 'internet',
-      position: { x: 20, y: 100 },
+      position: { x: 20, y: 130 },
       data: { label: 'Internet' } },
 
     { id: 'proxmox', type: 'proxmox',
       position: { x: 190, y: 20 },
-      style: { width: 460, height: 400, background: 'transparent', border: 'none', padding: 0 },
+      style: { width: 520, height: 520, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'Proxmox VE · nap.frt.utn.edu.ar · 45.6.5.34' } },
 
-    // CT206: nginx a la izquierda, front + api a la derecha (columna)
+    // proxy: dentro de proxmox, fuera de cualquier CT, a la izquierda
+    { id: 'proxy', type: 'service', parentId: 'proxmox', extent: 'parent',
+      position: { x: 20, y: 180 },
+      data: { label: 'Reverse Proxy', sub: 'openresty :443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'right'] } },
+
+    // CT206: desplazada a la derecha para dejar espacio al proxy
     { id: 'ct206', type: 'group', parentId: 'proxmox', extent: 'parent',
-      position: { x: 20, y: 30 },
-      style: { width: 420, height: 200, background: 'transparent', border: 'none', padding: 0 },
+      position: { x: 200, y: 30 },
+      style: { width: 280, height: 330, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'CT 43362480A', ip: '172.16.90.206', borderColor: 'border-blue-900', labelColor: 'text-blue-500',
               href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F206:4:::::::' } },
 
     { id: 'nginx', type: 'service', parentId: 'ct206', extent: 'parent',
-      position: { x: 20, y: 70 },
-      data: { label: 'nginx', sub: ':80 / :443', icon: ICONS.nginx, iconColor: 'bg-green-900 text-green-400', status: api, handles: ['left', 'right'] } },
+      position: { x: 20, y: 40 },
+      data: { label: 'nginx', sub: ':80', icon: ICONS.nginx, iconColor: 'bg-green-900 text-green-400', status: api, handles: ['left', 'bottom'] } },
 
     { id: 'frontend', type: 'service', parentId: 'ct206', extent: 'parent',
-      position: { x: 240, y: 30 },
-      data: { label: 'React', sub: 'dist/', icon: ICONS.react, iconColor: 'bg-sky-900 text-sky-400', status: api, handles: ['left'] } },
+      position: { x: 20, y: 130 },
+      data: { label: 'React', sub: 'dist/', icon: ICONS.react, iconColor: 'bg-sky-900 text-sky-400', status: api, handles: ['top'] } },
 
     { id: 'api', type: 'service', parentId: 'ct206', extent: 'parent',
-      position: { x: 240, y: 120 },
-      data: { label: 'FastAPI', sub: ':8000', icon: ICONS.fastapi, iconColor: 'bg-teal-900 text-teal-400', status: api, handles: ['left', 'bottom'] } },
+      position: { x: 20, y: 220 },
+      data: { label: 'FastAPI', sub: ':8000', icon: ICONS.fastapi, iconColor: 'bg-teal-900 text-teal-400', status: api, handles: ['top', 'bottom'] } },
 
-    // CT207: postgres debajo de CT206
+    // CT207: debajo de CT206
     { id: 'ct207', type: 'group', parentId: 'proxmox', extent: 'parent',
-      position: { x: 20, y: 260 },
-      style: { width: 420, height: 110, background: 'transparent', border: 'none', padding: 0 },
+      position: { x: 200, y: 390 },
+      style: { width: 280, height: 100, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'CT 43362480DB', ip: '172.16.90.207', borderColor: 'border-purple-900', labelColor: 'text-purple-400',
               href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F207:4:::::::' } },
 
     { id: 'db', type: 'db', parentId: 'ct207', extent: 'parent',
-      position: { x: 140, y: 30 },
+      position: { x: 20, y: 25 },
       data: { label: 'PostgreSQL', sub: ':5432', icon: ICONS.postgresql, iconColor: 'bg-indigo-900 text-indigo-400', status: db, handles: ['top'], onOpen: onOpenErd } },
   ]
 }
 
 const EDGES: Edge[] = [
-  { id: 'e1', source: 'internet', sourceHandle: 'right',  target: 'nginx',    targetHandle: 'left',  ...mkEdge(true,  'HTTP') },
-  { id: 'e2', source: 'nginx',    sourceHandle: 'right',  target: 'api',      targetHandle: 'left',  ...mkEdge(true,  'proxy /api') },
-  { id: 'e3', source: 'nginx',    sourceHandle: 'right',  target: 'frontend', targetHandle: 'left',  ...mkEdge(false, 'static') },
-  { id: 'e4', source: 'api',      sourceHandle: 'bottom', target: 'db',       targetHandle: 'top',   ...mkEdge(true,  'SQL') },
+  { id: 'e1', source: 'internet', sourceHandle: 'right',  target: 'proxy',    targetHandle: 'left',   ...mkEdge(true,  'HTTPS') },
+  { id: 'e5', source: 'proxy',    sourceHandle: 'right',  target: 'nginx',    targetHandle: 'left',   ...mkEdge(true,  'HTTP /43362480') },
+  { id: 'e2', source: 'nginx',    sourceHandle: 'bottom', target: 'api',      targetHandle: 'top',    ...mkEdge(true,  'proxy /api') },
+  { id: 'e3', source: 'nginx',    sourceHandle: 'bottom', target: 'frontend', targetHandle: 'top',    ...mkEdge(false, 'static') },
+  { id: 'e4', source: 'api',      sourceHandle: 'bottom', target: 'db',       targetHandle: 'top',    ...mkEdge(true,  'SQL') },
 ]
 
 function FlowContent({ api, db }: { api: boolean | null; db: boolean | null }) {
