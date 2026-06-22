@@ -35,8 +35,8 @@ function PostForm({
   const [saving, setSaving] = useState(false)
 
   const addTag = (val: string) => {
-    const t = val.trim().toLowerCase()
-    if (t && !tags.includes(t)) setTags([...tags, t])
+    const incoming = val.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+    setTags(prev => [...prev, ...incoming.filter(t => !prev.includes(t))])
     setTagInput('')
   }
 
