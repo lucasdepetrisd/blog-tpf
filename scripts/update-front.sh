@@ -12,7 +12,7 @@ git -C "$CLONE_DIR" pull
 
 echo "==> Copiando dist a $DIST_DIR..."
 mkdir -p "$DIST_DIR/static"
-rsync -a --delete "$CLONE_DIR/backend/public/" "$DIST_DIR/"
+rsync -a --delete --exclude='static/' "$CLONE_DIR/backend/public/" "$DIST_DIR/"
 
 echo "==> Creando subfolder /$BASENAME/..."
 mkdir -p "$DIST_DIR/$BASENAME"
