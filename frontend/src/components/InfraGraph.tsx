@@ -336,6 +336,7 @@ const EDGES: Edge[] = [
 
 function FlowContent({ api, db }: { api: boolean | null; db: boolean | null }) {
   const [erdOpen, setErdOpen] = useState(false)
+  const [ready, setReady] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState(
     buildNodes(api, db, () => setErdOpen(true))
   )
@@ -345,7 +346,7 @@ function FlowContent({ api, db }: { api: boolean | null; db: boolean | null }) {
     setNodes((nds) =>
       nds.map((n) => {
         if (n.id === 'db') return { ...n, data: { ...n.data, status: db } }
-        if (['nginx', 'api', 'frontend'].includes(n.id)) return { ...n, data: { ...n.data, status: api } }
+        if (['nginx', 'api', 'frontend', 'proxy'].includes(n.id)) return { ...n, data: { ...n.data, status: api } }
         return n
       })
     )
@@ -363,6 +364,8 @@ function FlowContent({ api, db }: { api: boolean | null; db: boolean | null }) {
         zoomOnScroll={false}
         proOptions={{ hideAttribution: true }}
         colorMode="dark"
+        onInit={() => { fitView({ padding: 0.15 }); setReady(true) }}
+        style={{ visibility: ready ? 'visible' : 'hidden', overflow: 'hidden' }}
       >
         <Background color="#18181b" gap={24} size={1} />
       </ReactFlow>
@@ -388,7 +391,7 @@ export default function InfraGraph() {
   }, [])
 
   return (
-    <div style={{ height: 500 }} className="relative border border-zinc-800 rounded-lg overflow-hidden bg-zinc-950">
+    <div style={{ height: 500, contain: 'strict' }} className="relative border border-zinc-800 rounded-lg overflow-hidden bg-zinc-950">
       <ReactFlowProvider>
         <FlowContent api={health?.api ?? null} db={health?.db ?? null} />
       </ReactFlowProvider>
