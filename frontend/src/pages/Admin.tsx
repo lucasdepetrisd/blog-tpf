@@ -222,7 +222,7 @@ function ProfileTab() {
       )}
       <div className="flex items-center gap-4">
         <img
-          src={profile.has_photo ? `/api/profile/photo?v=${Date.now()}` : 'https://github.com/lucasdepetrisd.png?size=128'}
+          src={profile.has_photo ? `${BASE}/api/profile/photo?v=${Date.now()}` : 'https://github.com/lucasdepetrisd.png?size=128'}
           alt={profile.name}
           className="w-16 h-16 rounded-full object-cover border border-zinc-800"
         />

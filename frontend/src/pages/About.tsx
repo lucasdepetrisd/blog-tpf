@@ -84,7 +84,7 @@ export default function About() {
 
           <div className="flex items-start gap-6">
             <img
-              src={profile?.has_photo ? '/api/profile/photo' : 'https://github.com/lucasdepetrisd.png?size=160'}
+              src={profile?.has_photo ? `${BASE}/api/profile/photo` : 'https://github.com/lucasdepetrisd.png?size=160'}
               alt={profile?.name ?? 'Lucas Depetris'}
               className="w-20 h-20 rounded-full object-cover border border-zinc-800 shrink-0"
             />
@@ -130,7 +130,7 @@ export default function About() {
               </div>
               {pdfExists ? (
                 <a
-                  href="/static/informe.pdf"
+                  href={`${BASE}/static/informe.pdf`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 border border-zinc-800 rounded px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-colors shrink-0"
@@ -216,7 +216,7 @@ export default function About() {
 
       {/* Tab: docs */}
       {tab === 'docs' && (
-        <PdfViewer url="/static/informe.pdf" />
+        <PdfViewer url={`${BASE}/static/informe.pdf`} />
       )}
 
     </div>
