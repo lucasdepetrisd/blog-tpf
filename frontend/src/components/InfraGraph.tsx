@@ -4,6 +4,7 @@ import {
   type NodeTypes, type Node, type Edge,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { BASE } from '../api'
 
 interface Health { api: boolean; db: boolean }
 
@@ -108,7 +109,7 @@ function ERDModal({ onClose }: { onClose: () => void }) {
   const [schema, setSchema] = useState<Schema | null>(null)
 
   useEffect(() => {
-    fetch('/api/system/schema')
+    fetch(`${BASE}/api/system/schema`)
       .then(r => r.json())
       .then(setSchema)
       .catch(() => setSchema({ tables: [], foreign_keys: [] }))
@@ -377,7 +378,7 @@ export default function InfraGraph() {
   const [health, setHealth] = useState<Health | null>(null)
 
   useEffect(() => {
-    fetch('/api/system/health')
+    fetch(`${BASE}/api/system/health`)
       .then((r) => r.json())
       .then(setHealth)
       .catch(() => setHealth({ api: false, db: false }))
