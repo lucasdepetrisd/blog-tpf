@@ -10,6 +10,7 @@ export default defineConfig({
       '/static': 'http://localhost:8000',
     },
   },
+  base: '/43362480/',
   build: {
     outDir: '../backend/public',
     emptyOutDir: true,

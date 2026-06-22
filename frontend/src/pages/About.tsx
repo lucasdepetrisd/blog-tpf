@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
-import { getProfile, getChangelog, getSystemInfo, type Profile, type ChangelogEntry, type SystemInfo } from '../api'
+import { getProfile, getSystemInfo, type Profile, type SystemInfo } from '../api'
 import InfraGraph from '../components/InfraGraph'
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -30,14 +30,13 @@ function Bar({ percent }: { percent: number }) {
 export default function About() {
   const [tab, setTab] = useState<Tab>('about')
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [changelog, setChangelog] = useState<ChangelogEntry[]>([])
   const [sysinfo, setSysinfo] = useState<SystemInfo | null>(null)
   const [pdfExists, setPdfExists] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getProfile(), getChangelog(), getSystemInfo()])
-      .then(([p, c, s]) => { setProfile(p.data); setChangelog(c.data); setSysinfo(s.data) })
+    Promise.all([getProfile(), getSystemInfo()])
+      .then(([p, s]) => { setProfile(p.data); setSysinfo(s.data) })
       .finally(() => setLoading(false))
 
     fetch('/api/system/pdf-status')
@@ -211,26 +210,8 @@ export default function About() {
             <p className="text-zinc-600 text-xs">unavailable</p>
           )}
 
-          {changelog.length > 0 && (
-            <div>
-              <p className="text-zinc-600 text-xs mb-4">
-                <span className="text-zinc-500">$</span> cat CHANGELOG.md
-              </p>
-              <div className="space-y-4">
-                {changelog.map((entry) => (
-                  <div key={entry.id} className="border-l-2 border-zinc-800 pl-4">
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-zinc-100 text-sm font-medium">{entry.version}</span>
-                      <span className="text-zinc-600 text-xs tabular-nums">{entry.date}</span>
-                    </div>
-                    <p className="text-zinc-400 text-sm mt-1 leading-relaxed">{entry.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-        </div>
+</div>
       )}
 
       {/* Tab: docs */}

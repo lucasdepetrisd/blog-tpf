@@ -16,7 +16,7 @@ systemctl enable postgresql
 systemctl start postgresql
 
 echo "==> Creando usuario y base de datos..."
-sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
+su -c "psql -v ON_ERROR_STOP=1" postgres <<SQL
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DB_USER}') THEN

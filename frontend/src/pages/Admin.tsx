@@ -4,12 +4,11 @@ import { useAuth } from '../AuthContext'
 import {
   getPosts, createPost, updatePost, deletePost,
   getProfile, updateProfile, uploadPhoto, deletePhoto,
-  getChangelog, createChangelogEntry, deleteChangelogEntry,
-  type Post, type Profile, type ChangelogEntry,
+  type Post, type Profile,
 } from '../api'
 import CropModal from '../components/CropModal'
 
-type Tab = 'posts' | 'profile' | 'changelog' | 'docs'
+type Tab = 'posts' | 'profile' | 'docs'
 
 const inputClass =
   'w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600'
@@ -257,84 +256,6 @@ function ProfileTab() {
   )
 }
 
-function ChangelogTab() {
-  const [entries, setEntries] = useState<ChangelogEntry[]>([])
-  const [version, setVersion] = useState('')
-  const [description, setDescription] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [saving, setSaving] = useState(false)
-
-  const load = () => getChangelog().then((r) => setEntries(r.data))
-  useEffect(() => { load() }, [])
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      await createChangelogEntry({ version, description, date })
-      setVersion('')
-      setDescription('')
-      load()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('delete this entry?')) return
-    await deleteChangelogEntry(id)
-    load()
-  }
-
-  return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="flex gap-2">
-          <input
-            value={version}
-            onChange={(e) => setVersion(e.target.value)}
-            placeholder="v1.0.0"
-            className={inputClass + ' w-32'}
-            required
-          />
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={inputClass + ' flex-1'}
-            required
-          />
-        </div>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="qué cambió en esta versión..."
-          rows={3}
-          className={inputClass + ' resize-y'}
-          required
-        />
-        <button type="submit" disabled={saving} className={btnPrimary}>
-          {saving ? 'saving...' : '+ add entry'}
-        </button>
-      </form>
-      <div className="space-y-3">
-        {entries.length === 0 && <p className="text-zinc-600 text-sm">no entries yet.</p>}
-        {entries.map((entry) => (
-          <div key={entry.id} className="border border-zinc-800 rounded p-3 flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm text-zinc-100">{entry.version}</span>
-                <span className="text-xs text-zinc-600">{entry.date}</span>
-              </div>
-              <p className="text-xs text-zinc-400 mt-1">{entry.description}</p>
-            </div>
-            <button onClick={() => handleDelete(entry.id)} className={btnDanger + ' shrink-0'}>delete</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function Admin() {
   const { isAuth } = useAuth()
@@ -363,14 +284,12 @@ export default function Admin() {
         <div className="flex gap-2">
           <button className={tabBtn('posts')} onClick={() => setTab('posts')}>posts</button>
           <button className={tabBtn('profile')} onClick={() => setTab('profile')}>profile</button>
-          <button className={tabBtn('changelog')} onClick={() => setTab('changelog')}>changelog</button>
           <button className={tabBtn('docs')} onClick={() => setTab('docs')}>docs</button>
         </div>
       </div>
       <div>
         {tab === 'posts' && <PostsTab />}
         {tab === 'profile' && <ProfileTab />}
-        {tab === 'changelog' && <ChangelogTab />}
         {tab === 'docs' && <DocsTab />}
       </div>
     </div>

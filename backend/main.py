@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from auth import create_token, verify_password, BLOG_USER
 from database import engine, get_db, Base
-from routers import posts, profile, changelog, system
+from routers import posts, profile, system
 import models
 
 Base.metadata.create_all(bind=engine)
@@ -33,7 +33,6 @@ app.add_middleware(
 
 app.include_router(posts.router)
 app.include_router(profile.router)
-app.include_router(changelog.router)
 app.include_router(system.router)
 
 _static_dir = Path(__file__).parent / "public" / "static"

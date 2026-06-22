@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, LargeBinary
+from sqlalchemy import Column, Integer, String, Text, DateTime, LargeBinary
 from sqlalchemy.sql import func
 from database import Base
 
@@ -13,14 +13,6 @@ class Post(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-
-class Changelog(Base):
-    __tablename__ = "changelog"
-
-    id = Column(Integer, primary_key=True, index=True)
-    version = Column(String(20), nullable=False)
-    description = Column(Text, nullable=False)
-    date = Column(Date, nullable=False)
 
 
 class Profile(Base):

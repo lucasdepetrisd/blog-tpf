@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, field_validator
 
@@ -25,21 +25,6 @@ class PostResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-class ChangelogCreate(BaseModel):
-    version: str
-    description: str
-    date: date
-
-
-class ChangelogResponse(BaseModel):
-    id: int
-    version: str
-    description: str
-    date: date
-
-    class Config:
-        from_attributes = True
 
 
 class ProfileUpdate(BaseModel):

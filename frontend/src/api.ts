@@ -34,17 +34,6 @@ export const createPost = (data: { title: string; content: string; tags: string 
 export const updatePost = (id: number, data: { title: string; content: string; tags: string }) => api.put<Post>(`/posts/${id}`, data)
 export const deletePost = (id: number) => api.delete(`/posts/${id}`)
 
-export interface ChangelogEntry {
-  id: number
-  version: string
-  description: string
-  date: string
-}
-
-export const getChangelog = () => api.get<ChangelogEntry[]>('/changelog')
-export const createChangelogEntry = (data: { version: string; description: string; date: string }) =>
-  api.post<ChangelogEntry>('/changelog', data)
-export const deleteChangelogEntry = (id: number) => api.delete(`/changelog/${id}`)
 
 export interface SystemInfo {
   hostname: string

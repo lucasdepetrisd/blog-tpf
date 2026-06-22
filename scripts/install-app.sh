@@ -14,13 +14,6 @@ echo "==> Instalando dependencias del sistema..."
 apt-get update
 apt-get install -y git nginx python3 python3-pip python3-venv curl ca-certificates rsync
 
-# Node 20 via nodesource
-if ! command -v node &>/dev/null || [ "$(node -e 'process.stdout.write(process.version.split(".")[0].slice(1))')" -lt 20 ]; then
-  echo "==> Instalando Node.js 20..."
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt-get install -y nodejs
-fi
-
 # ── Clonar / actualizar repo ──────────────────────────────────────────────────
 if [ -d "$CLONE_DIR/.git" ]; then
   echo "==> Actualizando repo..."
