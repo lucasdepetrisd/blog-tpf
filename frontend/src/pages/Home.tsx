@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getPosts, getProfile, type Post, type Profile } from '../api'
+import { getPosts, getProfile, BASE, type Post, type Profile } from '../api'
 
 const PROMPT = '$ ls -lt posts/'
 
@@ -66,6 +66,7 @@ export default function Home() {
   const filtered = posts
     .filter((p) => !search.trim() || p.title.toLowerCase().includes(search.toLowerCase()))
     .filter((p) => !activeTag || p.tags?.split(',').map((t) => t.trim()).includes(activeTag))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const years = [...new Set(filtered.map((p) => new Date(p.created_at).getFullYear()))].sort((a, b) => b - a)
 
@@ -74,7 +75,7 @@ export default function Home() {
       <div className="pb-6 border-b border-zinc-800">
         <div className="flex items-center gap-3">
           <img
-            src={profile?.has_photo ? '/api/profile/photo' : 'https://github.com/lucasdepetrisd.png?size=64'}
+            src={profile?.has_photo ? `${BASE}/api/profile/photo` : 'https://github.com/lucasdepetrisd.png?size=64'}
             alt={profile?.name ?? 'Lucas Depetris'}
             className="w-10 h-10 rounded-full object-cover border border-zinc-800"
           />
