@@ -292,7 +292,7 @@ function buildNodes(api: boolean | null, db: boolean | null, onOpenErd?: () => v
     // proxy: dentro de proxmox, fuera de cualquier CT, a la izquierda
     { id: 'proxy', type: 'service', parentId: 'proxmox', extent: 'parent',
       position: { x: 20, y: 180 },
-      data: { label: 'Reverse Proxy', sub: 'openresty :443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'right'] } },
+      data: { label: 'Reverse Proxy', sub: ':443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'right'] } },
 
     // CT206: desplazada a la derecha para dejar espacio al proxy
     { id: 'ct206', type: 'group', parentId: 'proxmox', extent: 'parent',
