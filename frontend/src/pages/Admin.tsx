@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import {
   getPosts, createPost, updatePost, deletePost,
-  getProfile, updateProfile, uploadPhoto, deletePhoto,
+  getProfile, updateProfile, uploadPhoto, deletePhoto, BASE,
   type Post, type Profile,
 } from '../api'
 import CropModal from '../components/CropModal'
@@ -304,7 +304,7 @@ function DocsTab() {
   const [size, setSize] = useState(0)
 
   useEffect(() => {
-    fetch('/api/system/pdf-status')
+    fetch(`${BASE}/api/system/pdf-status`)
       .then(r => r.json())
       .then(d => { setExists(d.exists); setSize(d.size) })
   }, [status])
@@ -316,7 +316,7 @@ function DocsTab() {
     setStatus('uploading')
     const form = new FormData()
     form.append('file', file)
-    const res = await fetch('/api/system/upload-pdf', {
+    const res = await fetch(`${BASE}/api/system/upload-pdf`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: form,

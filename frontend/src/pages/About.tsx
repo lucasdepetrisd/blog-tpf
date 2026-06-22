@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
-import { getProfile, getSystemInfo, type Profile, type SystemInfo } from '../api'
+import { getProfile, getSystemInfo, BASE, type Profile, type SystemInfo } from '../api'
 import InfraGraph from '../components/InfraGraph'
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -39,11 +39,11 @@ export default function About() {
       .then(([p, s]) => { setProfile(p.data); setSysinfo(s.data) })
       .finally(() => setLoading(false))
 
-    fetch('/api/system/pdf-status')
+    fetch(`${BASE}/api/system/pdf-status`)
       .then(r => r.json())
       .then(d => setPdfExists(d.exists))
 
-    const es = new EventSource('/api/system/stream')
+    const es = new EventSource(`${BASE}/api/system/stream`)
     es.onmessage = (e) => setSysinfo(JSON.parse(e.data))
     return () => es.close()
   }, [])
