@@ -19,10 +19,120 @@ const TABS: { id: Tab; label: string; cmd: string }[] = [
   { id: 'docs',   label: 'docs',   cmd: 'ls docs/'                   },
 ]
 
-function Bar({ percent }: { percent: number }) {
+function gaugeColor(p: number) {
+  if (p >= 85) return '#ef4444'
+  if (p >= 60) return '#f59e0b'
+  return '#22d3ee'
+}
+
+function Gauge({ label, percent, value }: { label: string; percent: number; value: string }) {
+  const [displayed, setDisplayed] = useState(0)
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayed(percent), 80)
+    return () => clearTimeout(t)
+  }, [percent])
+
+  const R = 46
+  const cx = 60, cy = 60
+  const startAngle = -210
+  const endAngle = 30
+  const totalDeg = endAngle - startAngle
+  const circ = 2 * Math.PI * R
+  const arcLen = (totalDeg / 360) * circ
+  const filled = (displayed / 100) * arcLen
+
+  function polarToXY(deg: number) {
+    const rad = (deg - 90) * (Math.PI / 180)
+    return { x: cx + R * Math.cos(rad), y: cy + R * Math.sin(rad) }
+  }
+
+  const s = polarToXY(startAngle + 90)
+  const e = polarToXY(endAngle + 90)
+  const largeArc = totalDeg > 180 ? 1 : 0
+  const trackPath = `M ${s.x} ${s.y} A ${R} ${R} 0 ${largeArc} 1 ${e.x} ${e.y}`
+  const color = gaugeColor(percent)
+
   return (
-    <div className="w-16 h-1 bg-zinc-800 rounded overflow-hidden inline-block align-middle ml-1">
-      <div className="h-full bg-zinc-500 rounded" style={{ width: `${percent}%` }} />
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative" style={{ width: 120, height: 96 }}>
+        <svg viewBox="0 0 120 96" width="120" height="96">
+          <path d={trackPath} fill="none" stroke="#27272a" strokeWidth="8" strokeLinecap="round" />
+          <path
+            d={trackPath}
+            fill="none"
+            stroke={color}
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={`${filled} ${arcLen}`}
+            strokeDashoffset={0}
+            style={{ transition: 'stroke-dasharray 0.7s cubic-bezier(.4,0,.2,1)' }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center" style={{ paddingTop: 46 }}>
+          <span className="text-xl font-bold tabular-nums leading-none" style={{ color }}>
+            {percent}<span className="text-xs font-normal text-zinc-500">%</span>
+          </span>
+        </div>
+      </div>
+      <span className="text-xs text-zinc-400 uppercase tracking-widest">{label}</span>
+      <span className="text-xs text-zinc-500 tabular-nums">{value}</span>
+    </div>
+  )
+}
+
+function SystemTab({ sysinfo }: { sysinfo: SystemInfo | null }) {
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now())
+
+  useEffect(() => {
+    if (sysinfo) setLastUpdated(Date.now())
+  }, [sysinfo])
+
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Math.round((Date.now() - lastUpdated) / 1000)), 1000)
+    return () => clearInterval(id)
+  }, [lastUpdated])
+
+  if (!sysinfo) return <p className="text-zinc-600 text-xs">unavailable</p>
+
+  const left  = [['hostname', sysinfo.hostname], ['os', sysinfo.os],   ['arch', sysinfo.arch]]
+  const right = [['ip', sysinfo.ip],             ['uptime', sysinfo.uptime], ['cpu', `${sysinfo.cpu_count} cores`]]
+
+  return (
+    <div className="space-y-5">
+      {/* info estática — dos columnas */}
+      <div className="border border-zinc-800 rounded p-4 text-xs">
+        <div className="flex gap-8">
+          <div className="flex-1 space-y-2 min-w-0">
+            {left.map(([k, v]) => (
+              <div key={k} className="flex items-center gap-2 min-w-0">
+                <span className="text-zinc-400 w-16 shrink-0">{k}</span>
+                <span className="text-zinc-300 truncate" title={v}>{v}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 space-y-2 min-w-0">
+            {right.map(([k, v]) => (
+              <div key={k} className="flex items-center gap-2 min-w-0">
+                <span className="text-zinc-400 shrink-0">{k}</span>
+                <span className="text-zinc-300 truncate ml-1" title={v}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* gauges */}
+      <div className="border border-zinc-800 rounded p-5">
+        <div className="flex justify-around">
+          <Gauge label="cpu"    percent={sysinfo.cpu_percent} value={`${sysinfo.cpu_percent}%`} />
+          <Gauge label="memory" percent={sysinfo.mem_percent} value={`${sysinfo.mem_used_mb} / ${sysinfo.mem_total_mb} MB`} />
+          <Gauge label="disk"   percent={sysinfo.disk_percent} value={`${sysinfo.disk_used_gb} / ${sysinfo.disk_total_gb} GB`} />
+        </div>
+        <p className="text-center text-xs text-zinc-500 mt-3">
+          updated {elapsed === 0 ? 'just now' : `${elapsed}s ago`} · live via SSE
+        </p>
+      </div>
     </div>
   )
 }
@@ -183,35 +293,7 @@ export default function About() {
 
       {/* Tab: system */}
       {tab === 'system' && (
-        <div className="space-y-8">
-
-          {sysinfo ? (
-            <div className="border border-zinc-800 rounded p-4 space-y-2 text-xs">
-              {[
-                ['hostname', sysinfo.hostname],
-                ['os',       sysinfo.os],
-                ['arch',     sysinfo.arch],
-                ['ip',       sysinfo.ip],
-                ['uptime',   sysinfo.uptime],
-                ['cpu',      `${sysinfo.cpu_count} cores · ${sysinfo.cpu_percent}%`],
-                ['memory',   `${sysinfo.mem_used_mb} / ${sysinfo.mem_total_mb} MB`],
-                ['disk',     `${sysinfo.disk_used_gb} / ${sysinfo.disk_total_gb} GB`],
-              ].map(([k, v]) => (
-                <div key={k} className="flex items-center gap-2">
-                  <span className="text-zinc-600 w-20 shrink-0">{k}</span>
-                  <span className="text-zinc-300">{v}</span>
-                  {k === 'memory' && <Bar percent={sysinfo.mem_percent} />}
-                  {k === 'disk'   && <Bar percent={sysinfo.disk_percent} />}
-                  {k === 'cpu'    && <Bar percent={sysinfo.cpu_percent} />}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-zinc-600 text-xs">unavailable</p>
-          )}
-
-
-</div>
+        <SystemTab sysinfo={sysinfo} />
       )}
 
       {/* Tab: docs */}
