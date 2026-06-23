@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+import jwt
 
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 ALGORITHM = "HS256"
@@ -36,5 +36,5 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
         if not username:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
         return str(username)
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
