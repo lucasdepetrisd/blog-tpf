@@ -294,26 +294,26 @@ function buildNodes(api: boolean | null, db: boolean | null, onOpenErd?: () => v
       position: { x: 20, y: 180 },
       data: { label: 'Reverse Proxy', sub: ':443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'right'] } },
 
-    // CT206: desplazada a la derecha para dejar espacio al proxy
-    { id: 'ct206', type: 'group', parentId: 'proxmox', extent: 'parent',
+    // CT215: desplazada a la derecha para dejar espacio al proxy
+    { id: 'ct215', type: 'group', parentId: 'proxmox', extent: 'parent',
       position: { x: 200, y: 30 },
       style: { width: 280, height: 330, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'CT 43362480A', ip: '172.16.90.215', borderColor: 'border-blue-900', labelColor: 'text-blue-500',
-              href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F206:4:::::::' } },
+              href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F215:4:::::::' } },
 
-    { id: 'nginx', type: 'service', parentId: 'ct206', extent: 'parent',
+    { id: 'nginx', type: 'service', parentId: 'ct215', extent: 'parent',
       position: { x: 20, y: 40 },
       data: { label: 'nginx', sub: ':80', icon: ICONS.nginx, iconColor: 'bg-green-900 text-green-400', status: api, handles: ['left', 'bottom'] } },
 
-    { id: 'frontend', type: 'service', parentId: 'ct206', extent: 'parent',
+    { id: 'frontend', type: 'service', parentId: 'ct215', extent: 'parent',
       position: { x: 20, y: 130 },
       data: { label: 'React', sub: 'dist/', icon: ICONS.react, iconColor: 'bg-sky-900 text-sky-400', status: api, handles: ['top'] } },
 
-    { id: 'api', type: 'service', parentId: 'ct206', extent: 'parent',
+    { id: 'api', type: 'service', parentId: 'ct215', extent: 'parent',
       position: { x: 20, y: 220 },
       data: { label: 'FastAPI', sub: ':8000', icon: ICONS.fastapi, iconColor: 'bg-teal-900 text-teal-400', status: api, handles: ['top', 'bottom'] } },
 
-    // CT207: debajo de CT206
+    // CT207: debajo de CT215
     { id: 'ct207', type: 'group', parentId: 'proxmox', extent: 'parent',
       position: { x: 200, y: 390 },
       style: { width: 280, height: 100, background: 'transparent', border: 'none', padding: 0 },
