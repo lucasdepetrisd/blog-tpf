@@ -163,10 +163,10 @@ export default function About() {
                 <span>host</span>
               </div>
               {[
-                { label: 'frontend', value: 'React 19 + TypeScript + Vite',  host: 'CT 43362480A · 172.16.90.206' },
-                { label: 'backend',  value: 'FastAPI + SQLAlchemy + Uvicorn', host: 'CT 43362480A · 172.16.90.206' },
+                { label: 'frontend', value: 'React 19 + TypeScript + Vite',  host: 'CT 43362480A · 172.16.90.215' },
+                { label: 'backend',  value: 'FastAPI + SQLAlchemy + Uvicorn', host: 'CT 43362480A · 172.16.90.215' },
                 { label: 'database', value: 'PostgreSQL 16',                  host: 'CT 43362480DB · 172.16.90.207' },
-                { label: 'proxy',    value: 'nginx (reverse proxy)',          host: 'CT 43362480A · 172.16.90.206' },
+                { label: 'proxy',    value: 'nginx (reverse proxy)',          host: 'CT 43362480A · 172.16.90.215' },
                 { label: 'infra',    value: 'Proxmox VE · LXC containers',   host: 'UTN FRT' },
               ].map(({ label, value, host }) => (
                 <div key={label} className="flex gap-2 py-2 border-b border-zinc-900 text-xs">

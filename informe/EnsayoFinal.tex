@@ -128,7 +128,7 @@
             \hline
             \textbf{Contenedor} & \textbf{Nombre} & \textbf{IP} & \textbf{Servicios} \\
             \hline
-            Aplicación & \texttt{43362480A} & \texttt{172.16.90.206} & nginx, frontend React, backend FastAPI y Uvicorn \\
+            Aplicación & \texttt{43362480A} & \texttt{172.16.90.215} & nginx, frontend React, backend FastAPI y Uvicorn \\
             \hline
             Base de datos & \texttt{43362480DB} & \texttt{172.16.90.207} & PostgreSQL 16 \\
             \hline
@@ -176,7 +176,7 @@ DB_NAME
     \begin{itemize}
         \item \texttt{main.py}: inicializa la aplicación FastAPI, CORS, routers y login.
         \item \texttt{database.py}: define la conexión a PostgreSQL y la sesión de SQLAlchemy.
-        \item \texttt{models.py}: declara los modelos \texttt{Post}, \texttt{Profile} y \texttt{Changelog}.
+        \item \texttt{models.py}: declara los modelos \texttt{Post} y \texttt{Profile}.
         \item \texttt{schemas.py}: define los esquemas de entrada y salida con Pydantic.
         \item \texttt{auth.py}: gestiona autenticación, hash de contraseña y emisión de tokens JWT.
     \end{itemize}
@@ -216,13 +216,21 @@ DB_NAME
             \hline
             GET & \texttt{/api/system/schema} & Devuelve el esquema de la base de datos para visualizarlo en el frontend. \\
             \hline
+            GET & \texttt{/api/system/health} & Verifica el estado de la API y la conexión a la base de datos. \\
+            \hline
+            GET & \texttt{/api/system/pdf-status} & Indica si el informe PDF está publicado y su tamaño. \\
+            \hline
+            POST & \texttt{/api/system/upload-pdf} & Carga el informe en PDF. Requiere autenticación. \\
+            \hline
+            DELETE & \texttt{/api/profile/photo} & Elimina la foto de perfil y vuelve a la imagen de GitHub. Requiere autenticación. \\
+            \hline
         \end{tabular}
         \caption{Puntos de acceso principales del backend}
     \end{table}
 
     \subsection{Modelo de Datos}
 
-    La base de datos utiliza tres entidades principales:
+    La base de datos utiliza dos entidades principales:
 
     \begin{table}[H]
         \centering
@@ -233,8 +241,6 @@ DB_NAME
             \texttt{posts} & Almacena las entradas del blog, contenido, etiquetas y fechas de creación y actualización. \\
             \hline
             \texttt{profile} & Almacena nombre, biografía y foto del alumno. \\
-            \hline
-            \texttt{changelog} & Registra versiones o cambios relevantes del proyecto. \\
             \hline
         \end{tabular}
         \caption{Tablas principales de PostgreSQL}
@@ -263,7 +269,7 @@ DB_NAME
         \item Agregar etiquetas a cada post.
         \item Modificar nombre y biografía del perfil.
         \item Cargar una foto de perfil, con recorte cuadrado antes de subirla.
-        \item Registrar entradas del registro de cambios.
+        \item Subir el informe en PDF para publicarlo en la sección \texttt{/about}.
     \end{itemize}
 
     La autenticación se realiza con usuario y contraseña configurables mediante variables de entorno. Una vez autenticado, el frontend guarda el token en el navegador y lo envía en el encabezado \texttt{Authorization} para las operaciones protegidas.
@@ -297,13 +303,21 @@ location /api/ {
 
     \subsection{Publicación del Informe}
 
-    La consigna solicita que el informe en PDF esté disponible desde el blog. Para cumplirlo, la página \texttt{/about} incluye un enlace a:
+    La consigna solicita que el informe en PDF esté disponible desde el blog. Para cumplirlo, la página \texttt{/about} incluye un visor y un enlace de descarga. El archivo se sube desde el panel de administración y se almacena en el servidor bajo:
 
     \begin{verbatim}
-/static/informe.pdf
+/var/www/blog/dist/static/informe.pdf
     \end{verbatim}
 
-    Este archivo debe copiarse al contenedor de aplicación como recurso estático, de modo que pueda descargarse desde el navegador y también adjuntarse en la entrega de la tarea.
+    nginx lo sirve bajo la ruta \texttt{/static/informe.pdf} (o \texttt{/43362480/static/informe.pdf} con el prefijo del proxy externo). El directorio \texttt{static/} se excluye del proceso de sincronización durante los deploys para preservar el archivo entre actualizaciones.
+
+    \subsection{Publicación bajo un Prefijo de URL}
+
+    El acceso externo al blog se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}, donde un proxy inverso reenvía las solicitudes al contenedor de aplicación bajo el prefijo \texttt{/43362480/}. Esto requirió configurar el enrutador de React con el \texttt{basename} correspondiente y prefijar todas las llamadas a la API con ese valor.
+
+    El prefijo se inyecta en tiempo de compilación mediante la variable de entorno \texttt{VITE\_BASENAME=/43362480} definida en el archivo \texttt{.env.production}. En el código, todas las rutas absolutas se construyen a partir de esta variable.
+
+    Para resolver un problema adicional, el proxy externo devolvía \texttt{501 Not Implemented} para archivos \texttt{.js} y \texttt{.css}. La solución fue utilizar \texttt{vite-plugin-singlefile}, un plugin de Vite que inlinea todo el JavaScript, CSS y los recursos SVG directamente dentro del archivo \texttt{index.html}. El resultado es un único archivo HTML de aproximadamente 3,5 MB que no requiere que el proxy sirva assets adicionales.
 
     \section{Pruebas Realizadas}
 

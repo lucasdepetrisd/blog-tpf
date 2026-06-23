@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-app.sh — instala frontend + backend en CT 43362480A (172.16.90.206)
+# install-app.sh — instala frontend + backend en CT 43362480A (172.16.90.215)
 # Uso: curl -fsSL <url-raw>/scripts/install-app.sh | bash
 #   o: bash scripts/install-app.sh  (desde dentro del repo ya clonado)
 set -euo pipefail
@@ -92,6 +92,6 @@ systemctl reload nginx
 
 echo ""
 echo "✓ Deploy completo."
-echo "  Blog:    http://172.16.90.206"
-echo "  API:     http://172.16.90.206/api"
+echo "  Blog:    http://172.16.90.215"
+echo "  API:     http://172.16.90.215/api"
 echo "  Logs:    journalctl -u blog -f"

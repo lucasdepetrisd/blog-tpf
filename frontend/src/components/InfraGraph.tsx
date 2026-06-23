@@ -298,7 +298,7 @@ function buildNodes(api: boolean | null, db: boolean | null, onOpenErd?: () => v
     { id: 'ct206', type: 'group', parentId: 'proxmox', extent: 'parent',
       position: { x: 200, y: 30 },
       style: { width: 280, height: 330, background: 'transparent', border: 'none', padding: 0 },
-      data: { label: 'CT 43362480A', ip: '172.16.90.206', borderColor: 'border-blue-900', labelColor: 'text-blue-500',
+      data: { label: 'CT 43362480A', ip: '172.16.90.215', borderColor: 'border-blue-900', labelColor: 'text-blue-500',
               href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F206:4:::::::' } },
 
     { id: 'nginx', type: 'service', parentId: 'ct206', extent: 'parent',

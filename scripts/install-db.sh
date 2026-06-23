@@ -6,7 +6,7 @@ set -euo pipefail
 DB_USER="${DB_USER:-bloguser}"
 DB_PASSWORD="${DB_PASSWORD:-blogpass}"
 DB_NAME="${DB_NAME:-blog_db}"
-APP_HOST="${APP_HOST:-172.16.90.206}"  # CT que puede conectarse
+APP_HOST="${APP_HOST:-172.16.90.215}"  # CT que puede conectarse
 
 echo "==> Instalando dependencias..."
 apt-get update
