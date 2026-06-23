@@ -49,7 +49,7 @@ def _snapshot() -> dict:
     uname = platform.uname()
     mem = psutil.virtual_memory()
     disk = psutil.disk_usage("/")
-    uptime_s = int(datetime.now(timezone.utc).timestamp() - psutil.boot_time())
+    uptime_s = int(float(Path("/proc/uptime").read_text().split()[0]))
     return {
         "hostname": uname.node,
         "os": f"{_distro()} · {uname.release}",
