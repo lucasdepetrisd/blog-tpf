@@ -67,7 +67,7 @@ After=network.target postgresql.service
 
 [Service]
 WorkingDirectory=/opt/blog/backend
-ExecStart=/opt/blog/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+ExecStart=/opt/blog/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1 --loop uvloop
 Restart=always
 RestartSec=3
 EnvironmentFile=/opt/blog/backend/.env
