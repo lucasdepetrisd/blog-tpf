@@ -76,7 +76,7 @@
         \item Desarrollar un frontend con React y TypeScript para la interfaz de usuario.
         \item Configurar nginx como servidor web y proxy inverso hacia el backend.
         \item Implementar autenticación para las operaciones administrativas.
-        \item Permitir la administración de publicaciones, perfil personal, foto y registro de cambios.
+        \item Permitir la administración de publicaciones, perfil personal y foto desde un panel protegido.
         \item Publicar el informe del trabajo práctico en formato PDF desde el sitio.
     \end{itemize}
 
@@ -255,7 +255,7 @@ DB_NAME
         \item \texttt{/post/:id}: detalle de una publicación con soporte para Markdown, tablas y bloques de código.
         \item \texttt{/about}: información del alumno, descripción del proyecto, acceso al informe PDF, stack técnico, diagrama de infraestructura y métricas del sistema.
         \item \texttt{/login}: inicio de sesión del administrador.
-        \item \texttt{/admin}: panel privado para administrar publicaciones, perfil y registro de cambios.
+        \item \texttt{/admin}: panel privado para administrar publicaciones, perfil y documentos.
     \end{itemize}
 
     El diseño visual adopta una estética sobria de terminal, con colores oscuros, tipografía compacta y navegación simple. Para mejorar la experiencia de lectura, las publicaciones soportan Markdown con resaltado de sintaxis y botón para copiar fragmentos de código.
@@ -313,7 +313,7 @@ location /api/ {
 
     \subsection{Publicación bajo un Prefijo de URL}
 
-    El acceso externo al blog se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}, donde un proxy inverso reenvía las solicitudes al contenedor de aplicación bajo el prefijo \texttt{/43362480/}. Esto requirió configurar el enrutador de React con el \texttt{basename} correspondiente y prefijar todas las llamadas a la API con ese valor.
+    El acceso externo al blog se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}, donde un proxy inverso reenvía las solicitudes al contenedor de aplicación bajo el prefijo \texttt{/43362480/}. La URL pública del blog es \href{https://nap.frt.utn.edu.ar/43362480/}{\texttt{https://nap.frt.utn.edu.ar/43362480/}}. Esto requirió configurar el enrutador de React con el \texttt{basename} correspondiente y prefijar todas las llamadas a la API con ese valor.
 
     El prefijo se inyecta en tiempo de compilación mediante la variable de entorno \texttt{VITE\_BASENAME=/43362480} definida en el archivo \texttt{.env.production}. En el código, todas las rutas absolutas se construyen a partir de esta variable.
 
@@ -359,5 +359,7 @@ location /api/ {
 
     La utilización de nginx como proxy inverso permitió publicar el frontend y el backend bajo un mismo punto de entrada. FastAPI y PostgreSQL resolvieron la lógica de negocio y la persistencia, mientras que React aportó una interfaz de usuario dinámica para administrar el contenido.
 
-    Como mejora adicional, se incorporaron métricas del sistema, visualización de infraestructura y administración del perfil, lo que convierte al blog en una entrega más completa y demostrable durante la defensa presencial.
+    Durante el desarrollo se encontraron limitaciones concretas del entorno: la restricción de 128 MB de RAM impidió compilar el frontend en el servidor, por lo que el build se genera en la PC de desarrollo y se sube versionado al repositorio. La base de datos inicializada sin locale explícito produjo errores de encoding con caracteres no ASCII, que se resolvieron recreándola con \texttt{UTF-8} y \texttt{C.UTF-8}. El proxy externo rechazaba archivos \texttt{.js} y \texttt{.css} con error 501, lo que llevó a adoptar \texttt{vite-plugin-singlefile} para empaquetar toda la aplicación en un único archivo HTML.
+
+    Como mejora adicional, se incorporaron métricas del sistema en tiempo real mediante Server-Sent Events, un diagrama interactivo de la infraestructura con estado de los servicios y un visor del esquema de la base de datos, lo que convierte al blog en una entrega más completa y demostrable durante la defensa presencial.
 \end{document}

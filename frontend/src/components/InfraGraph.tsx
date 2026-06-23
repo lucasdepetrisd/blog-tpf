@@ -281,54 +281,54 @@ const mkEdge = (animated: boolean, label?: string): Partial<Edge> => ({
 function buildNodes(api: boolean | null, db: boolean | null, onOpenErd?: () => void): Node[] {
   return [
     { id: 'internet', type: 'internet',
-      position: { x: 20, y: 130 },
+      position: { x: 20, y: 44 },
       data: { label: 'Internet' } },
 
     { id: 'proxmox', type: 'proxmox',
       position: { x: 190, y: 20 },
-      style: { width: 520, height: 520, background: 'transparent', border: 'none', padding: 0 },
+      style: { width: 350, height: 520, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'Proxmox VE · nap.frt.utn.edu.ar · 45.6.5.34' } },
 
-    // proxy: dentro de proxmox, fuera de cualquier CT, a la izquierda
+    // proxy: dentro de proxmox, encima del CT215
     { id: 'proxy', type: 'service', parentId: 'proxmox', extent: 'parent',
-      position: { x: 20, y: 180 },
-      data: { label: 'Reverse Proxy', sub: ':443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'right'] } },
+      position: { x: 30, y: 20 },
+      data: { label: 'Reverse Proxy', sub: ':443', icon: ICONS.proxy, iconColor: 'bg-orange-900 text-orange-400', status: api, handles: ['left', 'bottom'] } },
 
-    // CT215: desplazada a la derecha para dejar espacio al proxy
+    // CT215: debajo del proxy
     { id: 'ct215', type: 'group', parentId: 'proxmox', extent: 'parent',
-      position: { x: 200, y: 30 },
-      style: { width: 280, height: 330, background: 'transparent', border: 'none', padding: 0 },
+      position: { x: 20, y: 110 },
+      style: { width: 310, height: 260, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'CT 43362480A', ip: '172.16.90.215', borderColor: 'border-blue-900', labelColor: 'text-blue-500',
               href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F215:4:::::::' } },
 
     { id: 'nginx', type: 'service', parentId: 'ct215', extent: 'parent',
-      position: { x: 20, y: 40 },
-      data: { label: 'nginx', sub: ':80', icon: ICONS.nginx, iconColor: 'bg-green-900 text-green-400', status: api, handles: ['left', 'bottom'] } },
+      position: { x: 85, y: 40 },
+      data: { label: 'nginx', sub: ':80', icon: ICONS.nginx, iconColor: 'bg-green-900 text-green-400', status: api, handles: ['top', 'bottom'] } },
 
     { id: 'frontend', type: 'service', parentId: 'ct215', extent: 'parent',
-      position: { x: 20, y: 130 },
-      data: { label: 'React', sub: 'dist/', icon: ICONS.react, iconColor: 'bg-sky-900 text-sky-400', status: api, handles: ['top'] } },
+      position: { x: 10, y: 170 },
+      data: { label: 'React', sub: 'dist/ + PDF', icon: ICONS.react, iconColor: 'bg-sky-900 text-sky-400', status: api, handles: ['top'] } },
 
     { id: 'api', type: 'service', parentId: 'ct215', extent: 'parent',
-      position: { x: 20, y: 220 },
+      position: { x: 160, y: 170 },
       data: { label: 'FastAPI', sub: ':8000', icon: ICONS.fastapi, iconColor: 'bg-teal-900 text-teal-400', status: api, handles: ['top', 'bottom'] } },
 
     // CT207: debajo de CT215
     { id: 'ct207', type: 'group', parentId: 'proxmox', extent: 'parent',
-      position: { x: 200, y: 390 },
+      position: { x: 20, y: 400 },
       style: { width: 280, height: 100, background: 'transparent', border: 'none', padding: 0 },
       data: { label: 'CT 43362480DB', ip: '172.16.90.207', borderColor: 'border-purple-900', labelColor: 'text-purple-400',
               href: 'https://nap.frt.utn.edu.ar/#v1:0:=lxc%2F207:4:::::::' } },
 
     { id: 'db', type: 'db', parentId: 'ct207', extent: 'parent',
-      position: { x: 20, y: 25 },
+      position: { x: 60, y: 20 },
       data: { label: 'PostgreSQL', sub: ':5432', icon: ICONS.postgresql, iconColor: 'bg-indigo-900 text-indigo-400', status: db, handles: ['top'], onOpen: onOpenErd } },
   ]
 }
 
 const EDGES: Edge[] = [
   { id: 'e1', source: 'internet', sourceHandle: 'right',  target: 'proxy',    targetHandle: 'left',   ...mkEdge(true,  'HTTPS') },
-  { id: 'e5', source: 'proxy',    sourceHandle: 'right',  target: 'nginx',    targetHandle: 'left',   ...mkEdge(true,  'HTTP /43362480') },
+  { id: 'e5', source: 'proxy',    sourceHandle: 'bottom', target: 'nginx',    targetHandle: 'top',    ...mkEdge(true,  'HTTP /43362480') },
   { id: 'e2', source: 'nginx',    sourceHandle: 'bottom', target: 'api',      targetHandle: 'top',    ...mkEdge(true,  'proxy /api') },
   { id: 'e3', source: 'nginx',    sourceHandle: 'bottom', target: 'frontend', targetHandle: 'top',    ...mkEdge(false, 'static') },
   { id: 'e4', source: 'api',      sourceHandle: 'bottom', target: 'db',       targetHandle: 'top',    ...mkEdge(true,  'SQL') },
