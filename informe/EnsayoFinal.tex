@@ -49,11 +49,11 @@
 
     \section{Introducción}
 
-    El presente informe documenta el Trabajo Práctico Final de la materia Virtualización, cuyo objetivo fue implementar un servicio de blog personal sobre infraestructura de contenedores en Proxmox. La solución desarrollada integra una aplicación web con frontend, backend, base de datos y servidor web, distribuida en dos contenedores LXC.
+    El presente informe documenta el Trabajo Práctico Final de la materia Virtualización. La consigna estableció como objetivo implementar un servicio de blog personal sobre infraestructura de contenedores en Proxmox, con datos personales del alumno, imagen de perfil, publicaciones actualizables e informe final en PDF disponible desde el propio sitio. La solución desarrollada cumple esos requerimientos e incorpora funcionalidades adicionales por decisión propia: panel de administración, métricas del sistema en tiempo real, diagrama interactivo de infraestructura y visor del esquema de base de datos.
 
     El sistema permite publicar y administrar entradas de blog, mostrar información personal del alumno, cargar una imagen de perfil, consultar información técnica de la infraestructura y ofrecer el informe final en formato PDF desde el propio sitio. El desarrollo se realizó con React, FastAPI, PostgreSQL y nginx, respetando la separación de responsabilidades entre aplicación y base de datos.
 
-    La implementación se desplegó en la red provista para la práctica, utilizando los contenedores \texttt{43362480A} para la aplicación y \texttt{43362480DB} para la base de datos. El acceso externo previsto se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}.
+    La implementación se desplegó en la red provista para la práctica, utilizando los contenedores \texttt{43362480A} para la aplicación y \texttt{43362480DB} para la base de datos. El acceso externo se realiza a través del dominio \texttt{nap.frt.utn.edu.ar}.
 
     \section{Contexto}
 
@@ -361,5 +361,5 @@ location /api/ {
 
     Durante el desarrollo se encontraron limitaciones concretas del entorno: la restricción de 128 MB de RAM impidió compilar el frontend en el servidor, por lo que el build se genera en la PC de desarrollo y se sube versionado al repositorio. La base de datos inicializada sin locale explícito produjo errores de encoding con caracteres no ASCII, que se resolvieron recreándola con \texttt{UTF-8} y \texttt{C.UTF-8}. El proxy externo rechazaba archivos \texttt{.js} y \texttt{.css} con error 501, lo que llevó a adoptar \texttt{vite-plugin-singlefile} para empaquetar toda la aplicación en un único archivo HTML.
 
-    Como mejora adicional, se incorporaron métricas del sistema en tiempo real mediante Server-Sent Events, un diagrama interactivo de la infraestructura con estado de los servicios y un visor del esquema de la base de datos, lo que convierte al blog en una entrega más completa y demostrable durante la defensa presencial.
+    Por fuera de la consigna, se incorporaron por decisión propia métricas del sistema en tiempo real mediante Server-Sent Events, un diagrama interactivo de la infraestructura con estado de los servicios y un visor del esquema de la base de datos. Estas adiciones no estaban requeridas pero complementan la entrega y permiten observar el funcionamiento real del sistema desplegado.
 \end{document}

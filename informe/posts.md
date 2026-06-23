@@ -13,7 +13,7 @@ Para el TPF de Virtualización decidí separar la aplicación en **dos contenedo
 
 | CT | IP | Servicios |
 |----|----|-----------|
-| 43362480A | 172.16.90.206 | React + FastAPI + nginx |
+| 43362480A | 172.16.90.215 | React + FastAPI + nginx |
 | 43362480DB | 172.16.90.207 | PostgreSQL 16 |
 
 ## Por qué LXC y no VMs
